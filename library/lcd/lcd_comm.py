@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 # turing-smart-screen-python - a Python system monitor and library for USB-C displays like Turing Smart Screen or XuanFang
-# https://github.com/mathoudebine/turing-smart-screen-python/
+# https://github.com/dionnys/turing-smart-screen-python/
 #
-# Copyright (C) 2021 Matthieu Houdebine (mathoudebine)
+# Copyright (C) 2021 dionnys (dionnys)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -89,28 +89,38 @@ class LcdComm(ABC):
             return self.display_width
 
     def openSerial(self):
-        if self.com_port == 'AUTO':
-            self.com_port = self.auto_detect_com_port()
-            if not self.com_port:
-                logger.error(
-                    "Cannot find COM port automatically, please run Configuration again and select COM port manually")
-                try:
-                    sys.exit(0)
-                except:
-                    os._exit(0)
-            else:
-                logger.debug(f"Auto detected COM port: {self.com_port}")
-        else:
-            logger.debug(f"Static COM port: {self.com_port}")
+        original_com_port = self.com_port
+        import library.scheduler as scheduler
+        while True:
+            # Check if program is stopping (e.g. user clicked Exit from tray)
+            if scheduler.STOPPING:
+                return
 
-        try:
-            self.lcd_serial = serial.Serial(self.com_port, 115200, timeout=1, rtscts=True)
-        except Exception as e:
-            logger.error(f"Cannot open COM port {self.com_port}: {e}")
+            self.com_port = original_com_port
+            if self.com_port == 'AUTO':
+                detected_port = self.auto_detect_com_port()
+                if not detected_port:
+                    logger.error("Cannot find COM port automatically. Waiting 5s for device to be connected...")
+                    # Sleep in small bursts to allow fast exit if stopping
+                    for i in range(10):
+                        if scheduler.STOPPING: return
+                        time.sleep(0.5)
+                    continue
+                else:
+                    self.com_port = detected_port
+                    logger.debug(f"Auto detected COM port: {self.com_port}")
+            else:
+                logger.debug(f"Static COM port: {self.com_port}")
+
             try:
-                sys.exit(0)
-            except:
-                os._exit(0)
+                self.lcd_serial = serial.Serial(self.com_port, 115200, timeout=1, rtscts=True)
+                logger.info(f"Successfully opened COM port {self.com_port}")
+                break
+            except Exception as e:
+                logger.error(f"Cannot open COM port {self.com_port}: {e}. Retrying in 5 seconds...")
+                for i in range(10):
+                    if scheduler.STOPPING: return
+                    time.sleep(0.5)
 
     def closeSerial(self):
         if self.lcd_serial is not None:
@@ -148,7 +158,7 @@ class LcdComm(ABC):
             self.serial_write(line)
             if platform.system() == "Darwin":
                 # macOS needs the serial buffer to be flushed regularly to avoid bitmap corruption on the display
-                # See https://github.com/mathoudebine/turing-smart-screen-python/issues/7
+                # See https://github.com/dionnys/turing-smart-screen-python/issues/7
                 self.lcd_serial.flush()
         except serial.SerialTimeoutException:
             # We timed-out trying to write to our device, slow things down.
@@ -249,6 +259,8 @@ class LcdComm(ABC):
             background_image: Optional[str] = None,
             align: str = 'left',
             anchor: str = 'la',
+            outline_width: int = 2,
+            outline_color: Color = (0, 0, 0),
     ):
         # Convert text to bitmap using PIL and display it
         # Provide the background image path to display text with transparent background
@@ -283,7 +295,7 @@ class LcdComm(ABC):
         d = ImageDraw.Draw(text_image)
 
         if width == 0 or height == 0:
-            left, top, right, bottom = d.textbbox((x, y), text, font=ttfont, align=align, anchor=anchor)
+            left, top, right, bottom = d.textbbox((x, y), text, font=ttfont, align=align, anchor=anchor, stroke_width=outline_width)
 
             # textbbox may return float values, which is not good for the bitmap operations below.
             # Let's extend the bounding box to the next whole pixel in all directions
@@ -307,7 +319,7 @@ class LcdComm(ABC):
                 y = top
 
         # Draw text onto the background image with specified color & font
-        d.text((x, y), text, font=ttfont, fill=font_color, align=align, anchor=anchor)
+        d.text((x, y), text, font=ttfont, fill=font_color, align=align, anchor=anchor, stroke_width=outline_width, stroke_fill=parse_color(outline_color))
 
         # Restrict the dimensions if they overflow the display size
         left = max(left, 0)

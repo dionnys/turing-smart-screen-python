@@ -10,4 +10,4 @@ You can dot it yourself: see below.
 
 ## Creation & edition
 See this wiki page to use the Theme Editor:  
-https://github.com/mathoudebine/turing-smart-screen-python/wiki/System-monitor-%3A-themes
+https://github.com/dionnys/turing-smart-screen-python/wiki/System-monitor-%3A-themes

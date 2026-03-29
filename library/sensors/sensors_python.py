@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 # turing-smart-screen-python - a Python system monitor and library for USB-C displays like Turing Smart Screen or XuanFang
-# https://github.com/mathoudebine/turing-smart-screen-python/
+# https://github.com/dionnys/turing-smart-screen-python/
 #
-# Copyright (C) 2021 Matthieu Houdebine (mathoudebine)
+# Copyright (C) 2021 dionnys (dionnys)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -236,7 +236,7 @@ class Gpu(sensors.Gpu):
             DETECTED_GPU = GpuType.UNSUPPORTED
             if sys.version_info >= (3, 11) and (platform.system() == "Linux" or platform.system() == "Darwin"):
                 logger.warning("If you have an AMD GPU, you may need to install some  libraries manually: see "
-                               "https://github.com/mathoudebine/turing-smart-screen-python/wiki/Troubleshooting#linux--macos-no-supported-gpu-found-with-an-amd-gpu-and-python-311")
+                               "https://github.com/dionnys/turing-smart-screen-python/wiki/Troubleshooting#linux--macos-no-supported-gpu-found-with-an-amd-gpu-and-python-311")
 
         return DETECTED_GPU != GpuType.UNSUPPORTED
 

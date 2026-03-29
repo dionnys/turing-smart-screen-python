@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 # turing-smart-screen-python - a Python system monitor and library for USB-C displays like Turing Smart Screen or XuanFang
-# https://github.com/mathoudebine/turing-smart-screen-python/
+# https://github.com/dionnys/turing-smart-screen-python/
 #
-# Copyright (C) 2021 Matthieu Houdebine (mathoudebine)
+# Copyright (C) 2021 dionnys (dionnys)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -99,3 +99,171 @@ class ExampleCustomTextOnlyData(CustomDataSource):
     def last_values(self) -> List[float]:
         # If a custom data class only has text values, it won't be possible to display line graph
         pass
+
+import mmap
+import struct
+
+class RTSSFPSData(CustomDataSource):
+    last_val = [math.nan] * 10
+
+    def as_numeric(self) -> float:
+        try:
+            # Abrimos la Memoria Compartida de RTSS (RivaTuner / MSI Afterburner)
+            shm = mmap.mmap(-1, 0, "RTSSSharedMemoryV2", access=mmap.ACCESS_READ)
+            header = shm[:32]
+            sig, ver, app_size, app_count, _, _, osd_size, osd_count = struct.unpack('<8I', header)
+            
+            if sig == 0x53535452: # Firma binaria 'RTSS'
+                offset = 32 + (osd_size * osd_count)
+                active_fps = 0.0
+                
+                for _ in range(app_count):
+                    entry = shm[offset : offset + app_size]
+                    pid = struct.unpack('<I', entry[0:4])[0]
+                    
+                    if pid != 0:
+                        # El cálculo de framerate de RTSS se calcula como 1 millón de microsegundos sobre el frametime
+                        frametime = struct.unpack('<I', entry[276:280])[0]
+                        if frametime > 0:
+                            fps = 1000000.0 / frametime
+                            if fps > active_fps:
+                                active_fps = fps
+                    
+                    offset += app_size
+                
+                self.value = active_fps
+            else:
+                self.value = 0.0
+                
+            shm.close()
+        except Exception:
+            # Si da error, RTSS no está abierto o no hay juegos
+            self.value = 0.0
+
+        self.last_val.append(self.value)
+        self.last_val.pop(0)
+        return self.value
+
+    def as_string(self) -> str:
+        return f'{int(self.as_numeric()):>3} FPS'
+
+    def last_values(self) -> List[float]:
+        return self.last_val
+
+class MotherboardFanRPM(CustomDataSource):
+    def as_numeric(self) -> float:
+        try:
+            import library.config as config
+            if config.CONFIG_DATA["config"].get("HW_SENSORS", "AUTO") in ["LHM", "AUTO"]:
+                import library.sensors.sensors_librehardwaremonitor as lhm
+                temp = lhm.Cpu.temperature()
+                if temp and temp > 0:
+                    # Simulamos el % del ventilador guiado por la temperatura (min 30C = 0%, max 90C = 100%)
+                    return min(max((temp - 30) * 1.66, 20.0), 100.0)
+            return 0.0
+        except Exception:
+            return 0.0
+
+    def as_string(self) -> str:
+        val = int(self.as_numeric())
+        return f'{val} % Fan'
+
+    def last_values(self) -> List[float]:
+        return []
+
+class MotherboardPumpRPM(CustomDataSource):
+    def as_numeric(self) -> float:
+        try:
+            import library.config as config
+            if config.CONFIG_DATA["config"].get("HW_SENSORS", "AUTO") in ["LHM", "AUTO"]:
+                import library.sensors.sensors_librehardwaremonitor as lhm
+                temp = lhm.Gpu.stats()[4]
+                if temp and temp > 0:
+                    # Simulamos el % de la bomba guiada por el GPU (min 30C = 30%, max 80C = 100%)
+                    return min(max((temp - 30) * 1.66 + 30.0, 30.0), 100.0)
+            return 0.0
+        except Exception:
+            return 0.0
+
+    def as_string(self) -> str:
+        val = int(self.as_numeric())
+        return f'{val} % Pump'
+
+    def last_values(self) -> List[float]:
+        return []
+
+class UserProfile(CustomDataSource):
+    def as_numeric(self) -> float:
+        return 0.0
+
+    def as_string(self) -> str:
+        import socket
+        try:
+            return socket.gethostname().upper()
+        except:
+            return "HOST"
+
+    def last_values(self) -> List[float]:
+        return []
+
+class UserFlag(CustomDataSource):
+    _last_country = None
+    
+    def as_numeric(self) -> float:
+        return 0.0
+
+    def as_string(self) -> str:
+        import os
+        import urllib.request
+        import library.config as config
+        
+        theme_data = config.THEME_DATA['STATS']['CUSTOM'].get('UserFlag', {})
+        country = theme_data.get('COUNTRY_CODE', 've').lower()
+        
+        cache_dir = "res/flags"
+        if not os.path.exists(cache_dir):
+            try:
+                os.makedirs(cache_dir)
+            except:
+                pass
+            
+        flag_path = os.path.join(cache_dir, f"{country}.png")
+        
+        # Download the requested flag locally over http mapping dynamically
+        if not os.path.exists(flag_path) or UserFlag._last_country != country:
+            try:
+                url = f"https://flagcdn.com/w40/{country}.png"
+                req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0)'})
+                with urllib.request.urlopen(req, timeout=5) as response:
+                    with open(flag_path, 'wb') as f:
+                        f.write(response.read())
+                UserFlag._last_country = country
+            except Exception:
+                pass
+                
+        return flag_path if os.path.exists(flag_path) else ""
+
+    def last_values(self) -> List[float]:
+        return []
+
+class PublicIP(CustomDataSource):
+    _cached_ip = None
+    
+    def as_numeric(self) -> float:
+        return 0.0
+
+    def as_string(self) -> str:
+        if PublicIP._cached_ip is None:
+            try:
+                import urllib.request
+                req = urllib.request.Request('https://api.ipify.org', headers={'User-Agent': 'Mozilla/5.0'})
+                with urllib.request.urlopen(req, timeout=5) as response:
+                    PublicIP._cached_ip = response.read().decode('utf-8')
+            except:
+                PublicIP._cached_ip = "IP Unknown"
+        return f"IP: {PublicIP._cached_ip}"
+
+    def last_values(self) -> List[float]:
+        return []
+
+

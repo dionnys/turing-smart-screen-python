@@ -2,9 +2,9 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 # turing-smart-screen-python - a Python system monitor and library for USB-C displays like Turing Smart Screen or XuanFang
-# https://github.com/mathoudebine/turing-smart-screen-python/
+# https://github.com/dionnys/turing-smart-screen-python/
 #
-# Copyright (C) 2021 Matthieu Houdebine (mathoudebine)
+# Copyright (C) 2021 dionnys (dionnys)
 # Copyright (C) 2022 Rollbacke
 # Copyright (C) 2022 Ebag333
 # Copyright (C) 2022 w1ld3r
@@ -33,6 +33,26 @@ import glob
 import os
 import sys
 
+# Auto-elevate privileges on Windows
+if sys.platform == 'win32':
+    import ctypes
+    def is_admin():
+        try:
+            return ctypes.windll.shell32.IsUserAnAdmin()
+        except:
+            return False
+            
+    if not is_admin():
+        # Relaunch script/exe with admin rights
+        ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
+        sys.exit(0)
+
+    # Prevent multiple instances
+    mutex_name = "turing_smart_screen_python_mutex"
+    mutex = ctypes.windll.kernel32.CreateMutexW(None, False, mutex_name)
+    if ctypes.windll.kernel32.GetLastError() == 183: # ERROR_ALREADY_EXISTS
+        sys.exit(0)
+
 try:
     import atexit
     import locale
@@ -50,12 +70,11 @@ try:
 
     from library.log import logger
     import library.scheduler as scheduler
-    from library.display import display
 
 except Exception as e:
     print("""Import error: %s
-Please follow start guide to install required packages: https://github.com/mathoudebine/turing-smart-screen-python/wiki/System-monitor-:-how-to-start
-Or the troubleshooting page: https://github.com/mathoudebine/turing-smart-screen-python/wiki/Troubleshooting#all-os-tkinter-dependency-not-installed""" % str(
+Please follow start guide to install required packages: https://github.com/dionnys/turing-smart-screen-python/wiki/System-monitor-:-how-to-start
+Or the troubleshooting page: https://github.com/dionnys/turing-smart-screen-python/wiki/Troubleshooting#all-os-tkinter-dependency-not-installed""" % str(
         e))
     try:
         sys.exit(0)
@@ -91,7 +110,11 @@ if __name__ == "__main__":
 
     def clean_stop(tray_icon=None):
         # Turn screen and LEDs off before stopping
-        display.turn_off()
+        try:
+            from library.display import display
+            display.turn_off()
+        except:
+            pass
 
         # Do not stop the program now in case data transmission was in progress
         # Instead, ask the scheduler to empty the action queue before stopping
@@ -103,33 +126,39 @@ if __name__ == "__main__":
         # Remove tray icon just before exit
         if tray_icon:
             tray_icon.visible = False
+            try:
+                tray_icon.stop()
+            except:
+                pass
 
         # We force the exit to avoid waiting for other scheduled tasks: they may have a long delay!
-        try:
-            sys.exit(0)
-        except:
-            os._exit(0)
+        import os
+        os._exit(0)
 
 
     def on_signal_caught(signum, frame=None):
         logger.info("Caught signal %d, exiting" % signum)
-        clean_stop()
+        import threading
+        threading.Thread(target=clean_stop).start()
 
 
     def on_configure_tray(tray_icon, item):
         logger.info("Configure from tray icon")
         subprocess.Popen(f'"{MAIN_DIRECTORY}{glob.glob("configure.*", root_dir=MAIN_DIRECTORY)[0]}"', shell=True)
-        clean_stop(tray_icon)
+        import threading
+        threading.Thread(target=clean_stop, args=(tray_icon,)).start()
 
 
     def on_exit_tray(tray_icon, item):
         logger.info("Exit from tray icon")
-        clean_stop(tray_icon)
+        import threading
+        threading.Thread(target=clean_stop, args=(tray_icon,)).start()
 
 
     def on_clean_exit(*args):
         logger.info("Program will now exit")
-        clean_stop()
+        import threading
+        threading.Thread(target=clean_stop).start()
 
 
     if platform.system() == "Windows":
@@ -148,13 +177,21 @@ if __name__ == "__main__":
                 # WM_POWERBROADCAST is used to detect computer going to/resuming from sleep
                 if wParam == win32con.PBT_APMSUSPEND:
                     logger.info("Computer is going to sleep, display will turn off")
-                    display.turn_off()
+                    try:
+                        from library.display import display
+                        display.turn_off()
+                    except:
+                        pass
                 elif wParam == win32con.PBT_APMRESUMEAUTOMATIC:
                     logger.info("Computer is resuming from sleep, display will turn on")
-                    display.turn_on()
-                    # Some models have troubles displaying back the previous bitmap after being turned off/on
-                    display.display_static_images()
-                    display.display_static_text()
+                    try:
+                        from library.display import display
+                        display.turn_on()
+                        # Some models have troubles displaying back the previous bitmap after being turned off/on
+                        display.display_static_images()
+                        display.display_static_text()
+                    except:
+                        pass
             else:
                 # For any other events, the program will stop
                 logger.info("Program will now exit")
@@ -162,28 +199,41 @@ if __name__ == "__main__":
 
     # Create a tray icon for the program, with an Exit entry in menu
     try:
-        tray_icon = pystray.Icon(
-            name='Turing System Monitor',
-            title='Turing System Monitor',
-            icon=Image.open(MAIN_DIRECTORY + "res/icons/monitor-icon-17865/64.png"),
-            menu=pystray.Menu(
-                pystray.MenuItem(
-                    text='Configure',
-                    action=on_configure_tray),
-                pystray.Menu.SEPARATOR,
-                pystray.MenuItem(
-                    text='Exit',
-                    action=on_exit_tray)
-            )
-        )
-
-        # For platforms != macOS, display the tray icon now with non-blocking function
-        if platform.system() != "Darwin":
-            tray_icon.run_detached()
-            logger.info("Tray icon has been displayed")
-    except:
+        from library.config import CONFIG_DATA
         tray_icon = None
-        logger.warning("Tray icon is not supported on your platform")
+        import locale
+        try:
+            lang_code = locale.getlocale()[0] or "en"
+        except:
+            lang_code = "en"
+        lang_code = CONFIG_DATA['config'].get('APP_LANGUAGE', lang_code)
+        USE_ES = "es" in str(lang_code).lower()
+        cfg_text = "Configurar" if USE_ES else "Configure"
+        exit_text = "Salir (Cerrar monitor)" if USE_ES else "Exit"
+
+        if not CONFIG_DATA['config'].get('TRAY_ICON_HIDDEN', False):
+            tray_icon = pystray.Icon(
+                name='Turing System Monitor',
+                title='Turing System Monitor',
+                icon=Image.open(MAIN_DIRECTORY + "res/icons/monitor-icon-17865/64.png"),
+                menu=pystray.Menu(
+                    pystray.MenuItem(
+                        text=cfg_text,
+                        action=on_configure_tray),
+                    pystray.Menu.SEPARATOR,
+                    pystray.MenuItem(
+                        text=exit_text,
+                        action=on_exit_tray)
+                )
+            )
+
+            # For platforms != macOS, display the tray icon now with non-blocking function
+            if platform.system() != "Darwin":
+                tray_icon.run_detached()
+                logger.info("Tray icon has been displayed")
+    except Exception as ex:
+        tray_icon = None
+        logger.warning(f"Tray icon is not supported on your platform or failed to load: {ex}")
 
     # Set the different stopping event handlers, to send a complete frame to the LCD before exit
     atexit.register(on_clean_exit)
@@ -197,12 +247,14 @@ if __name__ == "__main__":
 
     # Initialize the display
     logger.info("Initialize display")
+    from library.display import display
     display.initialize_display()
 
     # Start serial queue handler
     scheduler.QueueHandler()
 
     # Create all static images
+    from library.display import display
     display.display_static_images()
 
     # Create all static texts
@@ -230,6 +282,33 @@ if __name__ == "__main__":
     scheduler.CustomStats(); time.sleep(0.25)
     scheduler.WeatherStats(); time.sleep(0.25)
     scheduler.PingStats(); time.sleep(0.25)
+
+    # MAGIC: Turno Automático de Brillo (Día y Noche)
+    import threading
+    import datetime
+    from library import config
+    
+    def auto_brightness_loop():
+        is_night_mode = False
+        while not scheduler.STOPPING:
+            current_hour = datetime.datetime.now().hour
+            is_night = current_hour >= 22 or current_hour < 7
+            
+            if is_night and not is_night_mode:
+                try:
+                    display.lcd.SetBrightness(0) # Apagón nocturno a las 22:00
+                except: pass
+                is_night_mode = True
+            elif not is_night and is_night_mode:
+                try:
+                    display.lcd.SetBrightness(config.CONFIG_DATA["display"]["BRIGHTNESS"]) # Brillo normal de día a las 07:00
+                except: pass
+                is_night_mode = False
+            
+            time.sleep(30) # Chequeo cada 30 segundos
+            
+    threading.Thread(target=auto_brightness_loop, daemon=True, name="NightModeCheck").start()
+
 
     # OS-specific tasks
     if tray_icon and platform.system() == "Darwin":  # macOS-specific
@@ -272,9 +351,27 @@ if __name__ == "__main__":
                                            0,
                                            hinst,
                                            None)
+            import gc
+            import os
+            import sys
+            config_file = os.path.join(MAIN_DIRECTORY, "config.yaml")
+            last_mtime = os.path.getmtime(config_file) if os.path.exists(config_file) else 0
+            counter = 0
             while True:
                 # Receive and dispatch window messages
                 win32gui.PumpWaitingMessages()
+                
+                # Memory optimization: empty garbage collector periodically (every ~10s)
+                counter += 1
+                if counter % 20 == 0:
+                    gc.collect()
+                    
+                    # Auto-Reload on config change
+                    current_mtime = os.path.getmtime(config_file) if os.path.exists(config_file) else 0
+                    if current_mtime > last_mtime:
+                        logger.info("Config changed! Restarting application dynamically...")
+                        os.execl(sys.executable, sys.executable, *sys.argv)
+                
                 time.sleep(0.5)
 
         except Exception as e:

@@ -1,6 +1,6 @@
 # This file is a sample theme that contains every possible data to be displayed on screen
 # It can be used to start the development of a new theme: it should be copied to a sub-folder with its PNG resources
-# See the wiki to edit this file: https://github.com/mathoudebine/turing-smart-screen-python/wiki/System-monitor-:-themes
+# See the wiki to edit this file: https://github.com/dionnys/turing-smart-screen-python/wiki/System-monitor-:-themes
 
 # NOTE: Every HW sensor is hidden in this example, to show a sensor change 'SHOW: False' to 'SHOW: True'
 ---

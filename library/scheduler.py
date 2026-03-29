@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 # turing-smart-screen-python - a Python system monitor and library for USB-C displays like Turing Smart Screen or XuanFang
-# https://github.com/mathoudebine/turing-smart-screen-python/
+# https://github.com/dionnys/turing-smart-screen-python/
 #
-# Copyright (C) 2021 Matthieu Houdebine (mathoudebine)
+# Copyright (C) 2021 dionnys (dionnys)
 # Copyright (C) 2022 Rollbacke
 # Copyright (C) 2022 Ebag333
 #
@@ -150,8 +150,12 @@ def NetStats():
     stats.Net.stats()
 
 
+date_interval = config.THEME_DATA['STATS'].get('DATE', {}).get("INTERVAL", 0)
+if date_interval == 0 and config.CONFIG_DATA['config'].get('GLOBAL_SHOW_DATETIME', False):
+    date_interval = 1
+
 @async_job("Date_Stats")
-@schedule(timedelta(seconds=config.THEME_DATA['STATS'].get('DATE', {}).get("INTERVAL", 0)).total_seconds())
+@schedule(timedelta(seconds=date_interval).total_seconds())
 def DateStats():
     # logger.debug("Refresh date stats")
     stats.Date.stats()
@@ -171,8 +175,12 @@ def CustomStats():
     stats.Custom.stats()
 
 
+weather_interval = config.THEME_DATA['STATS'].get('WEATHER', {}).get("INTERVAL", 0)
+if weather_interval == 0 and config.CONFIG_DATA['config'].get('GLOBAL_SHOW_WEATHER', False):
+    weather_interval = 300
+
 @async_job("Weather_Stats")
-@schedule(timedelta(seconds=max(300.0, config.THEME_DATA['STATS'].get('WEATHER', {}).get("INTERVAL", 0))).total_seconds())
+@schedule(timedelta(seconds=weather_interval if weather_interval == 0 else max(300.0, weather_interval)).total_seconds())
 def WeatherStats():
     # logger.debug("Refresh Weather data")
     stats.Weather.stats()
@@ -198,7 +206,10 @@ def QueueHandler():
         # Execute first action in the queue
         f, args = config.update_queue.get()
         if f:
-            f(*args)
+            try:
+                f(*args)
+            except Exception as e:
+                print(f'I/O Port Disconnected: {e}')
 
 
 def is_queue_empty() -> bool:

@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 # turing-smart-screen-python - a Python system monitor and library for USB-C displays like Turing Smart Screen or XuanFang
-# https://github.com/mathoudebine/turing-smart-screen-python/
+# https://github.com/dionnys/turing-smart-screen-python/
 #
-# Copyright (C) 2021 Matthieu Houdebine (mathoudebine)
+# Copyright (C) 2021 dionnys (dionnys)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -48,11 +48,14 @@ class SimulatedLcdWebServer(BaseHTTPRequestHandler):
         elif self.path.startswith("/" + SCREENSHOT_FILE):
             imgfile = open(SCREENSHOT_FILE, 'rb').read()
             mimetype = mimetypes.MimeTypes().guess_type(SCREENSHOT_FILE)[0]
-            self.send_response(200)
-            if mimetype is not None:
-                self.send_header('Content-type', mimetype)
-            self.end_headers()
-            self.wfile.write(imgfile)
+            try:
+                self.send_response(200)
+                if mimetype is not None:
+                    self.send_header('Content-type', mimetype)
+                self.end_headers()
+                self.wfile.write(imgfile)
+            except Exception:
+                pass
 
 
 # Simulated display: write on a file instead of serial port

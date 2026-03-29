@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 # turing-smart-screen-python - a Python system monitor and library for USB-C displays like Turing Smart Screen or XuanFang
-# https://github.com/mathoudebine/turing-smart-screen-python/
+# https://github.com/dionnys/turing-smart-screen-python/
 #
-# Copyright (C) 2021 Matthieu Houdebine (mathoudebine)
+# Copyright (C) 2021 dionnys (dionnys)
 # Copyright (C) 2022 Rollbacke
 # Copyright (C) 2022 Ebag333
 # Copyright (C) 2022 w1ld3r
@@ -32,12 +32,12 @@ from typing import List
 
 import babel.dates
 import requests
+import psutil
 from ping3 import ping
 from psutil._common import bytes2human
 from uptime import uptime
 
 import library.config as config
-from library.display import display
 from library.log import logger
 
 DEFAULT_HISTORY_SIZE = 10
@@ -104,6 +104,10 @@ def display_themed_value(theme_data, value, min_size=0, unit=''):
     if theme_data.get("SHOW_UNIT", True) and unit:
         text += str(unit)
 
+    if theme_data.get("PREFIX"):
+        text = f"{theme_data.get('PREFIX')}{text}"
+
+    from library.display import display
     display.lcd.DisplayText(
         text=text,
         x=theme_data.get("X", 0),
@@ -117,6 +121,8 @@ def display_themed_value(theme_data, value, min_size=0, unit=''):
         background_image=get_theme_file_path(theme_data.get("BACKGROUND_IMAGE", None)),
         align=theme_data.get("ALIGN", "left"),
         anchor=theme_data.get("ANCHOR", "lt"),
+        outline_width=theme_data.get("FONT_OUTLINE", 2),
+        outline_color=theme_data.get("FONT_OUTLINE_COLOR", (0, 0, 0)),
     )
 
 
@@ -142,6 +148,7 @@ def display_themed_progress_bar(theme_data, value):
     if not theme_data.get("SHOW", False):
         return
 
+    from library.display import display
     display.lcd.DisplayProgressBar(
         x=theme_data.get("X", 0),
         y=theme_data.get("Y", 0),
@@ -171,6 +178,7 @@ def display_themed_radial_bar(theme_data, value, min_size=0, unit='', custom_tex
     else:
         text = ""
 
+    from library.display import display
     display.lcd.DisplayRadialProgressBar(
         xc=theme_data.get("X", 0),
         yc=theme_data.get("Y", 0),
@@ -223,6 +231,7 @@ def display_themed_line_graph(theme_data, values):
 
     line_color = theme_data.get("LINE_COLOR", (0, 0, 0))
 
+    from library.display import display
     display.lcd.DisplayLineGraph(
         x=theme_data.get("X", 0),
         y=theme_data.get("Y", 0),
@@ -255,6 +264,15 @@ def save_last_value(value: float, last_values: List[float], history_size: int):
 
 def last_values_list(size: int) -> List[float]:
     return [math.nan] * size
+
+
+def get_temperature_color(temp_c):
+    if temp_c < 55:
+        return "0, 255, 0"
+    elif temp_c < 75:
+        return "255, 255, 0"
+    else:
+        return "255, 0, 0"
 
 
 class CPU:
@@ -332,6 +350,11 @@ class CPU:
                 cpu_temp_radial_data['SHOW'] = False
                 cpu_temp_graph_data['SHOW'] = False
                 cpu_temp_line_graph_data['SHOW'] = False
+
+        temp_color = get_temperature_color(temperature)
+        cpu_temp_text_data['FONT_COLOR'] = temp_color
+        cpu_temp_graph_data['BAR_COLOR'] = temp_color
+        cpu_temp_radial_data['BAR_COLOR'] = temp_color
 
         display_themed_temperature_value(cpu_temp_text_data, temperature)
         display_themed_progress_bar(cpu_temp_graph_data, temperature)
@@ -424,9 +447,9 @@ class Gpu:
         display_themed_percent_radial_bar(gpu_mem_radial_data, memory_percentage)
         display_themed_value(
             theme_data=gpu_mem_text_data,
-            value=int(memory_used_mb),
-            min_size=5,
-            unit=" M"
+            value=f"{float(memory_used_mb) / 1024:.1f}",
+            min_size=4,
+            unit=" G"
         )
         ################################ end of backward compatibility only
 
@@ -481,9 +504,9 @@ class Gpu:
 
         display_themed_value(
             theme_data=gpu_mem_used_text_data,
-            value=int(memory_used_mb),
-            min_size=5,
-            unit=" M"
+            value=f"{float(memory_used_mb) / 1024:.0f}",
+            min_size=4,
+            unit=" GB"
         )
 
         # GPU mem. total memory (M)
@@ -496,9 +519,9 @@ class Gpu:
 
         display_themed_value(
             theme_data=gpu_mem_total_text_data,
-            value=int(total_memory_mb),
-            min_size=5,  # Adjust min_size as necessary for your display
-            unit=" M"  # Assuming the unit is in Megabytes
+            value=f"{float(total_memory_mb) / 1024:.0f}",
+            min_size=4,
+            unit=" GB"
         )
 
         # GPU temperature (°C)
@@ -516,6 +539,11 @@ class Gpu:
                 gpu_temp_radial_data['SHOW'] = False
                 gpu_temp_graph_data['SHOW'] = False
                 gpu_temp_line_graph_data['SHOW'] = False
+
+        temp_color = get_temperature_color(temperature)
+        gpu_temp_text_data['FONT_COLOR'] = temp_color
+        gpu_temp_graph_data['BAR_COLOR'] = temp_color
+        gpu_temp_radial_data['BAR_COLOR'] = temp_color
 
         display_themed_temperature_value(gpu_temp_text_data, temperature)
         display_themed_progress_bar(gpu_temp_graph_data, temperature)
@@ -623,22 +651,40 @@ class Memory:
         display_themed_line_graph(memory_stats_theme_data['VIRTUAL']['LINE_GRAPH'], cls.last_values_memory_virtual)
 
         display_themed_value(
-            theme_data=memory_stats_theme_data['VIRTUAL']['USED'],
+            theme_data=memory_stats_theme_data['VIRTUAL'].get('USED', {}),
             value=int(sensors.Memory.virtual_used() / 1024 ** 2),
             min_size=5,
             unit=" M"
         )
         display_themed_value(
-            theme_data=memory_stats_theme_data['VIRTUAL']['FREE'],
+            theme_data=memory_stats_theme_data['VIRTUAL'].get('FREE', {}),
             value=int(sensors.Memory.virtual_free() / 1024 ** 2),
             min_size=5,
             unit=" M"
         )
         display_themed_value(
-            theme_data=memory_stats_theme_data['VIRTUAL']['TOTAL'],
+            theme_data=memory_stats_theme_data['VIRTUAL'].get('TOTAL', {}),
             value=int((sensors.Memory.virtual_free() + sensors.Memory.virtual_used()) / 1024 ** 2),
             min_size=5,
             unit=" M"
+        )
+        display_themed_value(
+            theme_data=memory_stats_theme_data['VIRTUAL'].get('USED_GB', {}),
+            value=f"{float(sensors.Memory.virtual_used()) / 1024 ** 3:.1f}",
+            min_size=4,
+            unit=" GB"
+        )
+        display_themed_value(
+            theme_data=memory_stats_theme_data['VIRTUAL'].get('FREE_GB', {}),
+            value=f"{float(sensors.Memory.virtual_free()) / 1024 ** 3:.1f}",
+            min_size=4,
+            unit=" GB"
+        )
+        display_themed_value(
+            theme_data=memory_stats_theme_data['VIRTUAL'].get('TOTAL_GB', {}),
+            value=f"{float(psutil.virtual_memory().total) / 1024 ** 3:.0f}",
+            min_size=4,
+            unit=" GB"
         )
 
 
@@ -744,31 +790,47 @@ class Date:
         else:
             date_now = datetime.datetime.now()
 
-        try:
-            if platform.system() == "Windows":
-                # Windows does not have LC_TIME environment variable, use deprecated getdefaultlocale() that returns language code following RFC 1766
-                lc_time = locale.getdefaultlocale()[0]
-            else:
-                lc_time = babel.dates.LC_TIME
-        except:
-            lc_time = None
+        weather_lang = config.CONFIG_DATA['config'].get('WEATHER_LANGUAGE', 'en')
+        if weather_lang in ['es', 'sp']:
+            lc_time = 'es_ES'
+        elif weather_lang == 'en':
+            lc_time = 'en_US'
+        else:
+            try:
+                if platform.system() == "Windows":
+                    lc_time = locale.getdefaultlocale()[0]
+                else:
+                    lc_time = babel.dates.LC_TIME
+            except:
+                lc_time = "en_US"
 
         if not lc_time:
             lc_time = "en_US"
 
         date_theme_data = config.THEME_DATA['STATS']['DATE']
         day_theme_data = date_theme_data['DAY']['TEXT']
+        hour_theme_data = date_theme_data['HOUR']['TEXT']
+
+        if config.CONFIG_DATA['config'].get('GLOBAL_SHOW_DATETIME', False):
+            if 'X' not in hour_theme_data:
+                hour_theme_data.update({'X': 10, 'Y': 10, 'FONT_SIZE': 20, 'FONT_COLOR': (255, 255, 255), 'BACKGROUND_COLOR': (0, 0, 0)})
+            if 'X' not in day_theme_data:
+                day_theme_data.update({'X': 10, 'Y': 35, 'FONT_SIZE': 16, 'FONT_COLOR': (255, 255, 255), 'BACKGROUND_COLOR': (0, 0, 0)})
+            hour_theme_data['SHOW'] = True
+            day_theme_data['SHOW'] = True
+
         date_format = day_theme_data.get("FORMAT", 'medium')
         display_themed_value(
             theme_data=day_theme_data,
             value=f"{babel.dates.format_date(date_now, format=date_format, locale=lc_time)}"
         )
 
-        hour_theme_data = date_theme_data['HOUR']['TEXT']
         time_format = hour_theme_data.get("FORMAT", 'medium')
+        time_str = f"{babel.dates.format_time(date_now, format=time_format, locale=lc_time)}"
+        time_str = time_str.replace("a. m.", "am").replace("p. m.", "pm").replace("a.m.", "am").replace("p.m.", "pm").replace("AM", "am").replace("PM", "pm")
         display_themed_value(
             theme_data=hour_theme_data,
-            value=f"{babel.dates.format_time(date_now, format=time_format, locale=lc_time)}"
+            value=time_str
         )
 
 
@@ -838,6 +900,20 @@ class Custom:
                         custom_text=string_value
                     )
 
+                # Display dynamic image (like flags) returned by sensor path
+                theme_data = config.THEME_DATA['STATS']['CUSTOM'][custom_stat].get("IMAGE", None)
+                if theme_data is not None and theme_data.get("SHOW", False):
+                    import os
+                    from library.display import display
+                    if string_value and os.path.isfile(string_value):
+                        display.lcd.DisplayBitmap(
+                            bitmap_path=string_value,
+                            x=theme_data.get("X", 0),
+                            y=theme_data.get("Y", 0),
+                            width=theme_data.get("WIDTH", 0),
+                            height=theme_data.get("HEIGHT", 0)
+                        )
+
                 # Display plot graph from histo values
                 theme_data = config.THEME_DATA['STATS']['CUSTOM'][custom_stat].get("LINE_GRAPH", None)
                 if theme_data is not None and last_values is not None:
@@ -855,22 +931,36 @@ class Weather:
         wupdatetime_theme_data = weather_theme_data.get('UPDATE_TIME', {}).get('TEXT', {})
         wdescription_theme_data = weather_theme_data.get('WEATHER_DESCRIPTION', {}).get('TEXT', {})
         whumidity_theme_data = weather_theme_data.get('HUMIDITY', {}).get('TEXT', {})
+        wcity_theme_data = weather_theme_data.get('CITY', {}).get('TEXT', {})
+
+        if config.CONFIG_DATA['config'].get('GLOBAL_SHOW_WEATHER', False):
+            if 'X' not in wtemperature_theme_data:
+                wtemperature_theme_data.update({'X': 10, 'Y': 60, 'FONT_SIZE': 16, 'FONT_COLOR': (255, 255, 255), 'BACKGROUND_COLOR': (0, 0, 0)})
+            if 'X' not in wdescription_theme_data:
+                wdescription_theme_data.update({'X': 50, 'Y': 60, 'FONT_SIZE': 16, 'FONT_COLOR': (255, 255, 255), 'BACKGROUND_COLOR': (0, 0, 0)})
+            if 'X' not in wcity_theme_data:
+                wcity_theme_data.update({'X': 100, 'Y': 60, 'FONT_SIZE': 16, 'FONT_COLOR': (255, 255, 255), 'BACKGROUND_COLOR': (0, 0, 0)})
+            wtemperature_theme_data['SHOW'] = True
+            wdescription_theme_data['SHOW'] = True
+            wcity_theme_data['SHOW'] = True
 
         activate = True if wtemperature_theme_data.get("SHOW") or wfelt_theme_data.get(
             "SHOW") or wupdatetime_theme_data.get("SHOW") or wdescription_theme_data.get(
-            "SHOW") or whumidity_theme_data.get("SHOW") else False
+            "SHOW") or whumidity_theme_data.get("SHOW") or wcity_theme_data.get("SHOW") else False
 
         if activate:
             temp = None
             feel = None
             time = None
             humidity = None
+            city = None
             if HW_SENSORS in ["STATIC", "STUB"]:
                 temp = "17.5°C"
                 feel = "(17.2°C)"
                 desc = "Cloudy"
                 time = "@15:33"
                 humidity = "45%"
+                city = "City"
             else:
                 # API Parameters
                 lat = config.CONFIG_DATA['config'].get('WEATHER_LATITUDE', "")
@@ -880,28 +970,29 @@ class Weather:
                 lang = config.CONFIG_DATA['config'].get('WEATHER_LANGUAGE', "en")
                 deg = WEATHER_UNITS.get(units, '°?')
                 if api_key:
-                    url = f'https://api.openweathermap.org/data/3.0/onecall?lat={lat}&lon={lon}&exclude=minutely,hourly,daily,alerts&appid={api_key}&units={units}&lang={lang}'
+                    url = f'https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={api_key}&units={units}&lang={lang}'
                     try:
                         response = requests.get(url)
                         if response.status_code == 200:
                             data = response.json()
-                            temp = f"{data['current']['temp']:.1f}{deg}"
-                            feel = f"({data['current']['feels_like']:.1f}{deg})"
-                            desc = data['current']['weather'][0]['description'].capitalize()
-                            humidity = f"{data['current']['humidity']:.0f}%"
+                            temp = f"{data['main']['temp']:.1f}{deg}"
+                            feel = f"({data['main']['feels_like']:.1f}{deg})"
+                            desc = data['weather'][0]['description'].capitalize()
+                            humidity = f"{data['main']['humidity']:.0f}%"
+                            city = data.get('name', '').replace('Provincia de ', '').replace('Ciudad de ', '')
+                            if len(city) > 13:
+                                city = city[:12] + "."
                             now = datetime.datetime.now()
                             time = f"@{now.hour:02d}:{now.minute:02d}"
                         else:
                             logger.error(f"Error {response.status_code} fetching OpenWeatherMap API:")
-                            # logger.error(f"Response content: {response.content}")
-                            # logger.error(response.text)
-                            desc = response.json().get('message')
+                            desc = None
                     except Exception as e:
                         logger.error(f"Error fetching OpenWeatherMap API: {str(e)}")
-                        desc = "Error fetching OpenWeatherMap API"
+                        desc = None
                 else:
                     logger.warning("No OpenWeatherMap API key provided in config.yaml")
-                    desc = "No OpenWeatherMap API key"
+                    desc = None
 
         if activate:
             # Display Temperature
@@ -912,6 +1003,8 @@ class Weather:
             display_themed_value(theme_data=wupdatetime_theme_data, value=time)
             # Display Humidity
             display_themed_value(theme_data=whumidity_theme_data, value=humidity)
+            # Display City
+            display_themed_value(theme_data=wcity_theme_data, value=city)
             # Display Weather Description (or error message)
             display_themed_value(theme_data=wdescription_theme_data, value=desc)
 

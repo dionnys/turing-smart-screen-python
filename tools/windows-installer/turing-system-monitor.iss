@@ -7,8 +7,8 @@
 
 #define MyAppName "Turing System Monitor"
 #define MyAppVersion GetStringFileInfo(SourceDir + "main.exe", PRODUCT_VERSION)
-#define MyAppPublisher "Matthieu Houdebine"
-#define MyAppURL "https://github.com/mathoudebine/turing-smart-screen-python"
+#define MyAppPublisher "dionnys"
+#define MyAppURL "https://github.com/dionnys/turing-smart-screen-python"
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application. Do not use the same AppId value in installers for other applications.

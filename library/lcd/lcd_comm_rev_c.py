@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 # turing-smart-screen-python - a Python system monitor and library for USB-C displays like Turing Smart Screen or XuanFang
-# https://github.com/mathoudebine/turing-smart-screen-python/
+# https://github.com/dionnys/turing-smart-screen-python/
 #
-# Copyright (C) 2021 Matthieu Houdebine (mathoudebine)
+# Copyright (C) 2021 dionnys (dionnys)
 # Copyright (C) 2023 Alex W. Baulé (alexwbaule)
 # Copyright (C) 2023 Arthur Ferrai (arthurferrai)
 #
@@ -86,6 +86,7 @@ class Command(Enum):
     DISPLAY_BITMAP_2INCH = bytearray((0xc8, 0xef, 0x69, 0x00)) + bytearray((0x0E, 0x10))
     DISPLAY_BITMAP_5INCH = bytearray((0xc8, 0xef, 0x69, 0x00)) + bytearray((0x17, 0x70))
     DISPLAY_BITMAP_8INCH = bytearray((0xc8, 0xef, 0x69, 0x00)) + bytearray((0x38, 0x40))
+    DISPLAY_BITMAP_9INCH = bytearray((0xc8, 0xef, 0x69, 0x00)) + bytearray((0x36, 0x24))
 
     STARTMODE_DEFAULT = bytearray((0x00,))
     STARTMODE_IMAGE = bytearray((0x01,))
@@ -119,6 +120,7 @@ class SubRevision(Enum):
     REV_2INCH = 1  # For 2.1" and 2.8" models
     REV_5INCH = 2
     REV_8INCH = 3
+    REV_9INCH = 4
 
 
 WAKE_RETRIES = 15
@@ -238,6 +240,8 @@ class LcdCommRevC(LcdComm):
             self.sub_revision = SubRevision.REV_5INCH
         elif self.display_width == 480 and self.display_height == 1920:
             self.sub_revision = SubRevision.REV_8INCH
+        elif (self.display_width == 1920 and self.display_height == 462) or (self.display_width == 462 and self.display_height == 1920):
+            self.sub_revision = SubRevision.REV_9INCH
         else:
             logger.error(f"Unsupported resolution {self.display_width}x{self.display_height} for revision C")
 
@@ -355,6 +359,8 @@ class LcdCommRevC(LcdComm):
                     display_bmp_cmd = Command.DISPLAY_BITMAP_2INCH
                 elif self.sub_revision == SubRevision.REV_8INCH:
                     display_bmp_cmd = Command.DISPLAY_BITMAP_8INCH
+                elif self.sub_revision == SubRevision.REV_9INCH:
+                    display_bmp_cmd = Command.DISPLAY_BITMAP_9INCH
 
                 self._send_command(display_bmp_cmd,
                                    payload=bytearray(
@@ -372,8 +378,8 @@ class LcdCommRevC(LcdComm):
             Count.Start += 1
 
     def _generate_full_image(self, image: Image.Image) -> bytes:
-        if self.sub_revision == SubRevision.REV_8INCH:
-            # Switch landscape/portrait mode for 8"
+        if self.sub_revision in (SubRevision.REV_8INCH, SubRevision.REV_9INCH):
+            # Switch landscape/portrait mode for 8"/9.2"
             if self.orientation == Orientation.LANDSCAPE:
                 image = image.rotate(270, expand=True)
             elif self.orientation == Orientation.REVERSE_LANDSCAPE:
@@ -398,8 +404,8 @@ class LcdCommRevC(LcdComm):
             self, image: Image.Image, x: int, y: int, count: int, cmd: Optional[Command] = None
     ) -> Tuple[bytearray, bytearray]:
         x0, y0 = x, y
-        if self.sub_revision == SubRevision.REV_8INCH:
-            # Switch landscape/portrait mode for 8"
+        if self.sub_revision in (SubRevision.REV_8INCH, SubRevision.REV_9INCH):
+            # Switch landscape/portrait mode for 8"/9.2"
             if self.orientation == Orientation.LANDSCAPE:
                 image = image.rotate(270, expand=True)
                 y0 = self.get_height() - y - image.width
@@ -441,8 +447,8 @@ class LcdCommRevC(LcdComm):
             img_data, pixel_size = image_to_BGR(image)
 
         for h, line in enumerate(chunked(img_data, image.width * pixel_size)):
-            if self.sub_revision == SubRevision.REV_8INCH:
-                # Switch landscape/portrait mode for 8"
+            if self.sub_revision in (SubRevision.REV_8INCH, SubRevision.REV_9INCH):
+                # Switch landscape/portrait mode for 8"/9.2"
                 img_raw_data += int(((x0 + h) * self.display_width) + y0).to_bytes(3, "big")
             else:
                 img_raw_data += int(((x0 + h) * self.display_height) + y0).to_bytes(3, "big")

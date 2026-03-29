@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 # turing-smart-screen-python - a Python system monitor and library for USB-C displays like Turing Smart Screen or XuanFang
-# https://github.com/mathoudebine/turing-smart-screen-python/
+# https://github.com/dionnys/turing-smart-screen-python/
 #
-# Copyright (C) 2021 Matthieu Houdebine (mathoudebine)
+# Copyright (C) 2021 dionnys (dionnys)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -62,6 +62,64 @@ if ctypes.windll.shell32.IsUserAnAdmin() == 0:
         sys.exit(0)
     except:
         os._exit(0)
+
+# MAGIC: Auto-arrancar Core Temp detectando su ubicación en cualquier parte del PC
+import winreg
+
+def get_core_temp_path():
+    try:
+        # Busca en el registro profundo dónde lo escondió el instalador
+        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Core Temp") as key:
+            loc, _ = winreg.QueryValueEx(key, "InstallLocation")
+            if loc: return os.path.join(loc, "Core Temp.exe")
+    except Exception:
+        pass
+    
+    # Opciones clásicas de respaldo
+    if os.path.exists(r"C:\Program Files\Core Temp\Core Temp.exe"): return r"C:\Program Files\Core Temp\Core Temp.exe"
+    if os.path.exists(r"C:\Program Files (x86)\Core Temp\Core Temp.exe"): return r"C:\Program Files (x86)\Core Temp\Core Temp.exe"
+    return None
+
+import subprocess
+
+def configure_core_temp_stealth(exe_path):
+    # Escribir silenciosamente la config para ocultar Core Temp del reloj y la barra
+    ini_path = os.path.join(os.path.dirname(exe_path), "CoreTemp.ini")
+    import configparser
+    config = configparser.ConfigParser()
+    config.optionxform = str # Preservar mayúsculas
+    try:
+        config.read(ini_path)
+        changed = False
+        if 'Display' not in config: config.add_section('Display')
+        for key in ['Minimized', 'CloseToSystray', 'HideTaskbarButton']:
+            if config.get('Display', key, fallback='') != '1':
+                config.set('Display', key, '1')
+                changed = True
+        
+        if 'System tray' not in config: config.add_section('System tray')
+        if config.get('System tray', 'SystrayOption', fallback='') != '3':
+            config.set('System tray', 'SystrayOption', '3')
+            changed = True
+            
+        if changed:
+            with open(ini_path, 'w') as f: config.write(f)
+    except:
+        pass
+
+core_temp_path = get_core_temp_path()
+if core_temp_path and os.path.exists(core_temp_path):
+    configure_core_temp_stealth(core_temp_path)
+    try:
+        # Modo sigiloso absoluto: Ocultar todas las ventanas de comprobador de tareas
+        si = subprocess.STARTUPINFO()
+        si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+        output = subprocess.check_output('tasklist', startupinfo=si).decode('utf-8', errors='ignore')
+        if "Core Temp.exe" not in output:
+            # Ejecutar Core Temp oculto sin destellar CMD
+            subprocess.Popen([core_temp_path], startupinfo=si)
+    except:
+        pass
 
 handle = Hardware.Computer()
 handle.IsCpuEnabled = True
@@ -173,6 +231,30 @@ def get_net_interface_and_update(if_name: str) -> Hardware.Hardware:
     return None
 
 
+import mmap
+
+class CoreTempSharedData(ctypes.Structure):
+    _fields_ = [
+        ("uiLoad", ctypes.c_uint32 * 256),
+        ("uiTjMax", ctypes.c_uint32 * 128),
+        ("uiCoreCnt", ctypes.c_uint32),
+        ("uiCPUCnt", ctypes.c_uint32),
+        ("fTemp", ctypes.c_float * 256),
+        ("fVID", ctypes.c_float),
+        ("fCPUSpeed", ctypes.c_float),
+        ("fFSBSpeed", ctypes.c_float),
+        ("fMultiplier", ctypes.c_float * 256),
+        ("sCPUName", ctypes.c_char * 100),
+        ("ucFahrenheit", ctypes.c_ubyte),
+        ("ucDeltaToTjMax", ctypes.c_ubyte),
+        ("ucTdpSupported", ctypes.c_ubyte),
+        ("ucPowerMultiplier", ctypes.c_ubyte),
+        ("uiStructVersion", ctypes.c_uint32),
+        ("uiTdp", ctypes.c_uint32 * 128),
+        ("fPower", ctypes.c_float * 128),
+        ("fMultipliers", ctypes.c_float * 256),
+    ]
+
 class Cpu(sensors.Cpu):
     @staticmethod
     def percentage(interval: float) -> float:
@@ -213,6 +295,17 @@ class Cpu(sensors.Cpu):
 
     @staticmethod
     def temperature() -> float:
+        # MAGIC: Primero intentamos leer legalmente la temperatura directo desde la Memoria Compartida de CoreTemp!
+        try:
+            shm = mmap.mmap(-1, ctypes.sizeof(CoreTempSharedData), "CoreTempMappingObject", access=mmap.ACCESS_READ)
+            core_temp_data = CoreTempSharedData.from_buffer_copy(shm.read())
+            temp = float(core_temp_data.fTemp[0])
+            shm.close()
+            if temp > 0.0:
+                return temp
+        except Exception:
+            pass
+
         cpu = get_hw_and_update(Hardware.HardwareType.Cpu)
         try:
             # By default, the average temperature of all CPU cores will be used
@@ -234,6 +327,10 @@ class Cpu(sensors.Cpu):
             for sensor in cpu.Sensors:
                 if sensor.SensorType == Hardware.SensorType.Temperature and str(sensor.Name).startswith(
                         "Core") and sensor.Value is not None:
+                    return float(sensor.Value)
+            # Final fallback: just grab the very first valid CPU temperature sensor if AMD's naming is weird
+            for sensor in cpu.Sensors:
+                if sensor.SensorType == Hardware.SensorType.Temperature and sensor.Value is not None:
                     return float(sensor.Value)
         except:
             pass

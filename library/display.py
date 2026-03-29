@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 # turing-smart-screen-python - a Python system monitor and library for USB-C displays like Turing Smart Screen or XuanFang
-# https://github.com/mathoudebine/turing-smart-screen-python/
+# https://github.com/dionnys/turing-smart-screen-python/
 #
-# Copyright (C) 2021 Matthieu Houdebine (mathoudebine)
+# Copyright (C) 2021 dionnys (dionnys)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -38,19 +38,19 @@ def _get_full_path(path, name):
 
 
 def _get_theme_orientation() -> Orientation:
-    if config.THEME_DATA["display"]["DISPLAY_ORIENTATION"] == 'portrait':
+    orientation = config.THEME_DATA["display"].get("DISPLAY_ORIENTATION", "portrait")
+    if orientation == 'portrait':
         if config.CONFIG_DATA["display"].get("DISPLAY_REVERSE", False):
             return Orientation.REVERSE_PORTRAIT
         else:
             return Orientation.PORTRAIT
-    elif config.THEME_DATA["display"]["DISPLAY_ORIENTATION"] == 'landscape':
+    elif orientation == 'landscape':
         if config.CONFIG_DATA["display"].get("DISPLAY_REVERSE", False):
             return Orientation.REVERSE_LANDSCAPE
         else:
             return Orientation.LANDSCAPE
     else:
-        logger.warning("Orientation '", config.THEME_DATA["display"]["DISPLAY_ORIENTATION"],
-                       "' unknown, using portrait")
+        logger.warning(f"Orientation '{orientation}' unknown, using portrait")
         return Orientation.PORTRAIT
 
 
@@ -65,6 +65,8 @@ def _get_theme_size() -> tuple[int, int]:
         return 480, 800
     elif config.THEME_DATA["display"].get("DISPLAY_SIZE", '') == '8.8"':
         return 480, 1920
+    elif config.THEME_DATA["display"].get("DISPLAY_SIZE", '') == '9.2"':
+        return 462, 1920
     else:
         logger.warning(
             f'Cannot find valid DISPLAY_SIZE property in selected theme {config.CONFIG_DATA["config"]["THEME"]}, defaulting to 3.5"')
@@ -166,6 +168,8 @@ class Display:
                                                                                                None)),
                     align=config.THEME_DATA['static_text'][text].get("ALIGN", "left"),
                     anchor=config.THEME_DATA['static_text'][text].get("ANCHOR", "lt"),
+                    outline_width=config.THEME_DATA['static_text'][text].get("FONT_OUTLINE", 2),
+                    outline_color=config.THEME_DATA['static_text'][text].get("FONT_OUTLINE_COLOR", (0, 0, 0)),
                 )
 
 

@@ -1,0 +1,394 @@
+---
+author: "@dionnys"
+
+display:
+  DISPLAY_SIZE: 9.2"
+  DISPLAY_ORIENTATION: landscape
+  width: 1920
+  height: 462
+  background: "theme_res_1884.png"
+
+static_images:
+  BACKGROUND:
+    PATH: theme_res_1884.png
+    X: 0
+    Y: 0
+    WIDTH: 1920
+    HEIGHT: 462
+
+static_text:
+  CPU:
+    TEXT: CPU
+    X: 1120
+    Y: 44
+    FONT_SIZE: 34
+    FONT_COLOR: 255, 255, 255
+    FONT: roboto-mono/RobotoMono-Bold.ttf
+    BACKGROUND_IMAGE: theme_res_1884.png
+  GPU:
+    TEXT: GPU
+    X: 1120
+    Y: 85
+    FONT_SIZE: 34
+    FONT_COLOR: 255, 255, 255
+    FONT: roboto-mono/RobotoMono-Bold.ttf
+    BACKGROUND_IMAGE: theme_res_1884.png
+  RAM:
+    TEXT: RAM
+    X: 1120
+    Y: 126
+    FONT_SIZE: 34
+    FONT_COLOR: 255, 255, 255
+    FONT: roboto-mono/RobotoMono-Bold.ttf
+    BACKGROUND_IMAGE: theme_res_1884.png
+  VRAM:
+    TEXT: VRAM
+    X: 1120
+    Y: 167
+    FONT_SIZE: 34
+    FONT_COLOR: 255, 255, 255
+    FONT: roboto-mono/RobotoMono-Bold.ttf
+    BACKGROUND_IMAGE: theme_res_1884.png
+  PING:
+    TEXT: PING
+    X: 1120
+    Y: 208
+    FONT_SIZE: 34
+    FONT_COLOR: 255, 255, 255
+    FONT: roboto-mono/RobotoMono-Bold.ttf
+    BACKGROUND_IMAGE: theme_res_1884.png
+  NET:
+    TEXT: NET
+    X: 1120
+    Y: 249
+    FONT_SIZE: 34
+    FONT_COLOR: 255, 255, 255
+    FONT: roboto-mono/RobotoMono-Bold.ttf
+    BACKGROUND_IMAGE: theme_res_1884.png
+
+STATS:
+  WEATHER:
+    INTERVAL: 5
+    CITY:
+      TEXT:
+        SHOW: True
+        X: 40
+        Y: 420
+        WIDTH: 300
+        HEIGHT: 37
+        ANCHOR: lm
+        FONT_SIZE: 34
+        FONT_COLOR: 255, 255, 255
+        FONT: roboto-mono/RobotoMono-Bold.ttf
+        BACKGROUND_IMAGE: theme_res_1884.png
+    TEMPERATURE:
+      TEXT:
+        SHOW: True
+        SHOW_UNIT: True
+        X: 360
+        Y: 420
+        WIDTH: 150
+        HEIGHT: 37
+        ANCHOR: lm
+        FONT_SIZE: 34
+        FONT_COLOR: 255, 255, 255
+        FONT: roboto-mono/RobotoMono-Bold.ttf
+        BACKGROUND_IMAGE: theme_res_1884.png
+    WEATHER_DESCRIPTION:
+      TEXT:
+        SHOW: True
+        X: 520
+        Y: 420
+        WIDTH: 300
+        HEIGHT: 37
+        ANCHOR: lm
+        FONT_SIZE: 34
+        FONT_COLOR: 255, 255, 255
+        FONT: roboto-mono/RobotoMono-Bold.ttf
+        BACKGROUND_IMAGE: theme_res_1884.png
+
+  PING:
+    INTERVAL: 1
+    TEXT:
+      SHOW: True
+      X: 1680
+      Y: 208
+      WIDTH: 200
+      HEIGHT: 37
+      ANCHOR: rm
+      FONT_SIZE: 34
+      FONT_COLOR: 255, 255, 255
+      FONT: roboto-mono/RobotoMono-Bold.ttf
+      BACKGROUND_IMAGE: theme_res_1884.png
+    GRAPH:
+      SHOW: False
+    RADIAL:
+      SHOW: False
+    LINE_GRAPH:
+      SHOW: False
+
+  NET:
+    INTERVAL: 1
+    WLO:
+      UPLOAD:
+        TEXT:
+          PREFIX: "^ "
+          SHOW: True
+          X: 1580
+          Y: 249
+          WIDTH: 250
+          HEIGHT: 37
+          ANCHOR: rm
+          FONT_SIZE: 26
+          FONT_COLOR: 255, 255, 255
+          FONT: roboto-mono/RobotoMono-Bold.ttf
+          BACKGROUND_IMAGE: theme_res_1884.png
+        LINE_GRAPH:
+          SHOW: False
+      DOWNLOAD:
+        TEXT:
+          PREFIX: "v "
+          SHOW: True
+          X: 1220
+          Y: 249
+          WIDTH: 250
+          HEIGHT: 37
+          ANCHOR: rm
+          FONT_SIZE: 26
+          FONT_COLOR: 255, 255, 255
+          FONT: roboto-mono/RobotoMono-Bold.ttf
+          BACKGROUND_IMAGE: theme_res_1884.png
+        LINE_GRAPH:
+          SHOW: False
+      UPLOADED:
+        TEXT:
+          SHOW: False
+      DOWNLOADED:
+        TEXT:
+          SHOW: False
+    ETH:
+      UPLOAD:
+        TEXT:
+          PREFIX: "^ "
+          SHOW: True
+          X: 1580
+          Y: 249
+          WIDTH: 250
+          HEIGHT: 37
+          ANCHOR: rm
+          FONT_SIZE: 26
+          FONT_COLOR: 255, 255, 255
+          FONT: roboto-mono/RobotoMono-Bold.ttf
+          BACKGROUND_IMAGE: theme_res_1884.png
+        LINE_GRAPH:
+          SHOW: False
+      DOWNLOAD:
+        TEXT:
+          PREFIX: "v "
+          SHOW: True
+          X: 1220
+          Y: 249
+          WIDTH: 250
+          HEIGHT: 37
+          ANCHOR: rm
+          FONT_SIZE: 26
+          FONT_COLOR: 255, 255, 255
+          FONT: roboto-mono/RobotoMono-Bold.ttf
+          BACKGROUND_IMAGE: theme_res_1884.png
+        LINE_GRAPH:
+          SHOW: False
+      UPLOADED:
+        TEXT:
+          SHOW: False
+      DOWNLOADED:
+        TEXT:
+          SHOW: False
+
+  CPU:
+    PERCENTAGE:
+      INTERVAL: 1
+      TEXT:
+        SHOW: True
+        SHOW_UNIT: True
+        X: 1204
+        Y: 40
+        WIDTH: 100
+        HEIGHT: 37
+        ANCHOR: mm
+        FONT_SIZE: 34
+        FONT_COLOR: 255, 255, 255
+        FONT: roboto-mono/RobotoMono-Bold.ttf
+        BACKGROUND_IMAGE: theme_res_1884.png
+      GRAPH:
+        SHOW: True
+        X: 1306
+        Y: 48
+        WIDTH: 374
+        HEIGHT: 16
+        MIN_VALUE: 0
+        MAX_VALUE: 100
+        BAR_COLOR: 246, 10, 8
+        BAR_OUTLINE: False
+        BACKGROUND_COLOR: 35, 35, 35
+    TEMPERATURE:
+      INTERVAL: 5
+      TEXT:
+        SHOW: True
+        SHOW_UNIT: True
+        X: 1780
+        Y: 40
+        WIDTH: 100
+        HEIGHT: 37
+        ANCHOR: mm
+        FONT_SIZE: 34
+        FONT_COLOR: 255, 255, 255
+        FONT: roboto-mono/RobotoMono-Bold.ttf
+        BACKGROUND_IMAGE: theme_res_1884.png
+
+  GPU:
+    INTERVAL: 1
+    PERCENTAGE:
+      GRAPH:
+        SHOW: True
+        X: 1306
+        Y: 89
+        WIDTH: 374
+        HEIGHT: 16
+        MIN_VALUE: 0
+        MAX_VALUE: 100
+        BAR_COLOR: 246, 10, 8
+        BAR_OUTLINE: False
+        BACKGROUND_COLOR: 35, 35, 35
+      TEXT:
+        SHOW: True
+        SHOW_UNIT: True
+        X: 1204
+        Y: 81
+        WIDTH: 100
+        HEIGHT: 37
+        ANCHOR: mm
+        FONT_SIZE: 34
+        FONT_COLOR: 255, 255, 255
+        FONT: roboto-mono/RobotoMono-Bold.ttf
+        BACKGROUND_IMAGE: theme_res_1884.png
+    TEMPERATURE:
+      TEXT:
+        SHOW: True
+        SHOW_UNIT: True
+        X: 1780
+        Y: 81
+        WIDTH: 100
+        HEIGHT: 37
+        ANCHOR: mm
+        FONT_SIZE: 34
+        FONT_COLOR: 255, 255, 255
+        FONT: roboto-mono/RobotoMono-Bold.ttf
+        BACKGROUND_IMAGE: theme_res_1884.png
+    MEMORY_USED:
+      TEXT:
+        SHOW: False
+    MEMORY_PERCENT:
+      GRAPH:
+        SHOW: True
+        X: 1306
+        Y: 172
+        WIDTH: 374
+        HEIGHT: 16
+        MIN_VALUE: 0
+        MAX_VALUE: 100
+        BAR_COLOR: 246, 10, 8
+        BAR_OUTLINE: False
+        BACKGROUND_COLOR: 35, 35, 35
+      TEXT:
+        SHOW: True
+        SHOW_UNIT: True
+        X: 1204
+        Y: 164
+        WIDTH: 100
+        HEIGHT: 37
+        ANCHOR: mm
+        FONT_SIZE: 34
+        FONT_COLOR: 255, 255, 255
+        FONT: roboto-mono/RobotoMono-Bold.ttf
+        BACKGROUND_IMAGE: theme_res_1884.png
+    MEMORY_TOTAL:
+      TEXT:
+        SHOW: True
+        SHOW_UNIT: True
+        X: 1740
+        Y: 164
+        WIDTH: 140
+        HEIGHT: 37
+        ANCHOR: mm
+        FONT_SIZE: 34
+        FONT_COLOR: 255, 255, 255
+        FONT: roboto-mono/RobotoMono-Bold.ttf
+        BACKGROUND_IMAGE: theme_res_1884.png
+
+  MEMORY:
+    INTERVAL: 1
+    VIRTUAL:
+      GRAPH:
+        SHOW: True
+        X: 1306
+        Y: 130
+        WIDTH: 374
+        HEIGHT: 16
+        MIN_VALUE: 0
+        MAX_VALUE: 100
+        BAR_COLOR: 246, 10, 8
+        BAR_OUTLINE: False
+        BACKGROUND_COLOR: 35, 35, 35
+      PERCENT_TEXT:
+        SHOW: True
+        SHOW_UNIT: True
+        X: 1204
+        Y: 122
+        WIDTH: 100
+        HEIGHT: 37
+        ANCHOR: mm
+        FONT_SIZE: 34
+        FONT_COLOR: 255, 255, 255
+        FONT: roboto-mono/RobotoMono-Bold.ttf
+        BACKGROUND_IMAGE: theme_res_1884.png
+      TOTAL_GB:
+        SHOW: True
+        SHOW_UNIT: True
+        X: 1740
+        Y: 122
+        WIDTH: 140
+        HEIGHT: 37
+        ANCHOR: mm
+        FONT_SIZE: 34
+        FONT_COLOR: 255, 255, 255
+        FONT: roboto-mono/RobotoMono-Bold.ttf
+        BACKGROUND_IMAGE: theme_res_1884.png
+
+  DATE:
+    INTERVAL: 1
+    DAY:
+      TEXT:
+        SHOW: True
+        FORMAT: "EEEE dd-MM-yyyy"
+        X: 1120
+        Y: 420
+        WIDTH: 450
+        HEIGHT: 37
+        ANCHOR: lm
+        FONT_SIZE: 34
+        FONT_COLOR: 255, 255, 255
+        FONT: roboto-mono/RobotoMono-Bold.ttf
+        BACKGROUND_IMAGE: theme_res_1884.png
+    HOUR:
+      TEXT:
+        SHOW: True
+        FORMAT: "medium"
+        X: 1500
+        Y: 420
+        WIDTH: 350
+        HEIGHT: 37
+        ANCHOR: rm
+        FONT_SIZE: 34
+        FONT_COLOR: 255, 255, 255
+        FONT: roboto-mono/RobotoMono-Bold.ttf
+        BACKGROUND_IMAGE: theme_res_1884.png
