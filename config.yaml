@@ -64,7 +64,7 @@ config:
   DESKTOP_WIDGET_RADIUS: 15
   DESKTOP_WIDGET_X: -1027
   DESKTOP_WIDGET_Y: -120
-  DESKTOP_WIDGET_TRANSPARENT_BG: true
+  DESKTOP_WIDGET_TRANSPARENT_BG: false
 display:
   # Display revision:
   # - A         for Turing 3.5" and UsbPCMonitor 3.5"/5"

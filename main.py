@@ -87,7 +87,12 @@ except:
     # If pystray cannot be loaded do not stop the program, just ignore it. The tray icon will not be displayed.
     pass
 
-MAIN_DIRECTORY = str(Path(__file__).parent.resolve()) + "/"
+import sys
+from pathlib import Path
+if getattr(sys, 'frozen', False):
+    MAIN_DIRECTORY = str(Path(sys.executable).parent.resolve()) + "/"
+else:
+    MAIN_DIRECTORY = str(Path(__file__).parent.resolve()) + "/"
 
 if __name__ == "__main__":
 
@@ -213,8 +218,8 @@ if __name__ == "__main__":
 
         if not CONFIG_DATA['config'].get('TRAY_ICON_HIDDEN', False):
             tray_icon = pystray.Icon(
-                name='Turing System Monitor',
-                title='Turing System Monitor',
+                name='Turing Smart Screen',
+                title='Turing Smart Screen',
                 icon=Image.open(MAIN_DIRECTORY + "res/icons/monitor-icon-17865/64.png"),
                 menu=pystray.Menu(
                     pystray.MenuItem(

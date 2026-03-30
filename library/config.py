@@ -38,7 +38,10 @@ def load_yaml(configfile):
 
 
 PATH = sys.path[0]
-MAIN_DIRECTORY = Path(__file__).parent.parent.resolve()
+if getattr(sys, 'frozen', False):
+    MAIN_DIRECTORY = Path(sys.executable).parent.resolve()
+else:
+    MAIN_DIRECTORY = Path(__file__).parent.parent.resolve()
 FONTS_DIR = str(MAIN_DIRECTORY / "res" / "fonts") + "/"
 CONFIG_DATA = load_yaml(MAIN_DIRECTORY / "config.yaml")
 THEME_DEFAULT = load_yaml(MAIN_DIRECTORY / "res/themes/default.yaml")

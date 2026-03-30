@@ -4,14 +4,14 @@ with open("configure.py", "r", encoding="utf-8") as f:
     text = f.read()
 
 LANG_DICT = {
-    'Turing System Monitor configuration': 'Configuración de Turing System Monitor',
+    'Turing Smart Screen configuration': 'Configuración de Turing Smart Screen',
     'Display configuration': 'Configuración de pantalla',
     'Smart screen model': 'Modelo de pantalla',
     'Smart screen size': 'Tamaño de pantalla',
     'COM port': 'Puerto COM',
     'Orientation': 'Orientación',
     'Brightness': 'Brillo',
-    'System Monitor Configuration': 'Configuración del Monitor de Sistema',
+    'Turing Smart Screen Configuration': 'Configuración de Turing Smart Screen',
     'Theme': 'Tema',
     'Hardware monitoring': 'Sensor de hardware',
     'Ethernet interface': 'Interfaz Ethernet',

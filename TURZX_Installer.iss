@@ -35,11 +35,11 @@ Source: "dist\turing-system-monitor\*"; DestDir: "{app}"; Flags: ignoreversion r
 
 [Icons]
 ; Accesos directos para la aplicación principal
-Name: "{group}\TURZX Monitor"; Filename: "{app}\main.exe"
-Name: "{commondesktop}\TURZX Monitor"; Filename: "{app}\main.exe"; Tasks: desktopicon
+Name: "{group}\TURZX Monitor"; Filename: "{app}\main.exe"; WorkingDir: "{app}"
+Name: "{commondesktop}\TURZX Monitor"; Filename: "{app}\main.exe"; WorkingDir: "{app}"; Tasks: desktopicon
 ; Accesos directos para el panel de configuración
-Name: "{group}\Configurar TURZX Monitor"; Filename: "{app}\configure.exe"
-Name: "{commondesktop}\Configurar TURZX Monitor"; Filename: "{app}\configure.exe"; Tasks: desktopicon
+Name: "{group}\Configurar TURZX Monitor"; Filename: "{app}\configure.exe"; WorkingDir: "{app}"
+Name: "{commondesktop}\Configurar TURZX Monitor"; Filename: "{app}\configure.exe"; WorkingDir: "{app}"; Tasks: desktopicon
 
 [Registry]
 ; Obligar a Windows a pedir permisos de Administrador (UAC) siempre que se abra el programa o su configurador
@@ -49,10 +49,10 @@ Root: HKLM; Subkey: "Software\Microsoft\Windows NT\CurrentVersion\AppCompatFlags
 [Run]
 ; Eliminar la tarea vieja siempre en cada instalación o actualización por si el usuario desmarcó la casilla esta vez
 Filename: "schtasks"; Parameters: "/Delete /TN ""TURZX_Monitor_Autostart"" /F"; Flags: runhidden
-; Crear la nueva tarea de auto-inicio SÓLO si el usuario marcó la casilla correspondiente
+; Crear la nueva tarea de auto-inicio SÓLO si el usuario marcó la casilla correspondiente. 
 Filename: "schtasks"; Parameters: "/Create /F /TN ""TURZX_Monitor_Autostart"" /TR ""\""{app}\main.exe\"""" /SC ONLOGON /RL HIGHEST"; Tasks: autostart; Flags: runhidden
-; Lanzar ahora (se eliminó runascurrentuser para que arranque con permisos de Admin)
-Filename: "{app}\main.exe"; Description: "Lanzar monitor ahora"; Flags: nowait postinstall
+; Lanzar ahora
+Filename: "{app}\main.exe"; Description: "Lanzar monitor ahora"; WorkingDir: "{app}"; Flags: nowait postinstall shellexec
 
 [UninstallRun]
 ; Eliminar la tarea al desinstalar

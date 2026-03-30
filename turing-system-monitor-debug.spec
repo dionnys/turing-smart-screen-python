@@ -6,7 +6,7 @@ configure_a = Analysis(
     ['configure.py'],
     pathex=[],
     binaries=[],
-    datas=[('res', 'res'), ('config.yaml', '.'), ('external', 'external')],
+    datas=[],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -34,7 +34,7 @@ configure_exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
     icon=['res\\icons\\monitor-icon-17865\\icon.ico'],
-    contents_directory='.',
+    icon=['res\\icons\\monitor-icon-17865\\icon.ico'],
     version='tools\\windows-installer\\pyinstaller-version-info.txt',
 )
 
@@ -44,7 +44,7 @@ main_a = Analysis(
     ['main.py'],
     pathex=[],
     binaries=[],
-    datas=[('res', 'res'), ('config.yaml', '.'), ('external', 'external')],
+    datas=[],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -72,7 +72,7 @@ main_exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
     icon=['res\\icons\\monitor-icon-17865\\icon.ico'],
-    contents_directory='.',
+    icon=['res\\icons\\monitor-icon-17865\\icon.ico'],
     version='tools\\windows-installer\\pyinstaller-version-info.txt',
 )
 
@@ -82,7 +82,7 @@ editor_a = Analysis(
     ['theme-editor.py'],
     pathex=[],
     binaries=[],
-    datas=[('res', 'res'), ('config.yaml', '.'), ('external', 'external')],
+    datas=[],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -110,7 +110,7 @@ editor_exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
     icon=['res\\icons\\monitor-icon-17865\\icon.ico'],
-    contents_directory='.',
+    icon=['res\\icons\\monitor-icon-17865\\icon.ico'],
     version='tools\\windows-installer\\pyinstaller-version-info.txt',
 )
 

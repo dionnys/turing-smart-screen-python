@@ -115,7 +115,12 @@ model_and_size_to_revision_map = {
 import ctypes
 import locale
 
-MAIN_DIRECTORY = str(Path(__file__).parent.resolve()) + "/"
+import sys
+from pathlib import Path
+if getattr(sys, 'frozen', False):
+    MAIN_DIRECTORY = str(Path(sys.executable).parent.resolve()) + "/"
+else:
+    MAIN_DIRECTORY = str(Path(__file__).parent.resolve()) + "/"
 
 try:
     lang_code = locale.getlocale()[0] or "en"
@@ -227,7 +232,7 @@ def get_fans():
 class TuringConfigWindow:
     def __init__(self):
         self.window = Tk()
-        self.window.title(T('Turing System Monitor configuration'))
+        self.window.title(T('Turing Smart Screen configuration'))
         self.window.geometry("820x630")
         self.window.iconphoto(True, PhotoImage(file=MAIN_DIRECTORY + "res/icons/monitor-icon-17865/64.png"))
         # When window gets focus again, reload theme preview in case it has been updated by theme editor
@@ -285,7 +290,7 @@ class TuringConfigWindow:
                                                   text="⚠ Turing 3.5\" displays can get hot at high brightness!",
                                                   foreground='#ff8c00')
 
-        self.sysmon_label2 = ttk.Label(self.window, text=T('System Monitor Configuration'), font='bold')
+        self.sysmon_label2 = ttk.Label(self.window, text=T('Turing Smart Screen Configuration'), font='bold')
         self.sysmon_label2.place(x=370, y=260)
 
         self.theme_label = ttk.Label(self.window, text=T('Theme'))
@@ -681,7 +686,7 @@ class TuringConfigWindow:
         global USE_ES
         USE_ES = (self.app_lang_cb.get() == "Español")
         
-        self.window.title(T('Turing System Monitor configuration'))
+        self.window.title(T('Turing Smart Screen configuration'))
         self.sysmon_label1.config(text=T('Display configuration'))
         self.model_label.config(text=T('Smart screen model'))
         self.size_label.config(text=T('Smart screen size'))
@@ -689,7 +694,7 @@ class TuringConfigWindow:
         self.orient_label.config(text=T('Orientation'))
         self.brightness_label.config(text=T('Brightness'))
         self.brightness_warning_label.config(text=T('⚠ Turing 3.5" displays can get hot at high brightness!'))
-        self.sysmon_label2.config(text=T('System Monitor Configuration'))
+        self.sysmon_label2.config(text=T('Turing Smart Screen Configuration'))
         self.theme_label.config(text=T('Theme'))
         
         global hw_lib_map

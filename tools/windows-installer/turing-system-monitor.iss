@@ -5,7 +5,7 @@
 #define IconDir "..\..\res\icons\monitor-icon-17865\"
 #define WizardDir "..\..\tools\windows-installer\"
 
-#define MyAppName "Turing System Monitor"
+#define MyAppName "Turing Smart Screen"
 #define MyAppVersion GetStringFileInfo(SourceDir + "main.exe", PRODUCT_VERSION)
 #define MyAppPublisher "dionnys"
 #define MyAppURL "https://github.com/dionnys/turing-smart-screen-python"
@@ -65,7 +65,7 @@ Name: "ukrainian"; MessagesFile: "compiler:Languages\Ukrainian.isl"
 Name: "default"; Description: "Default installation"; Flags: iscustom
 
 [Components]
-Name: "program"; Description: "Turing System Monitor software"; Flags: fixed; Types: default
+Name: "program"; Description: "Turing Smart Screen software"; Flags: fixed; Types: default
 Name: "themes"; Description: "Default themes (local changes will be lost! - custom themes are preserved)"; Types: default; Flags: disablenouninstallwarning
 Name: "config"; Description: "Default configuration"; Types: default; Flags: disablenouninstallwarning
 
@@ -78,7 +78,7 @@ Source: "{#SourceDir}res\themes\*"; Excludes: "--Theme examples"; DestDir: "{app
 [Icons]
 Name: "{group}\{cm:ProgramOnTheWeb,{#MyAppName}}"; Filename: "{#MyAppURL}"
 Name: "{group}\{cm:UninstallProgram,{#MyAppName}}"; Filename: "{uninstallexe}"
-Name: "{group}\Turing System Monitor"; Filename: "{app}\configure.exe"
+Name: "{group}\Turing Smart Screen"; Filename: "{app}\configure.exe"
 
 [Code]
 (* Detect if the program is already installed or if it is the first installation *)

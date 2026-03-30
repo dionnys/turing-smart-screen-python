@@ -30,7 +30,7 @@ VSVersionInfo(
       StringTable(
         '040904b0',
         [StringStruct('FileDescription', 'System Monitor for USB smart screens like Turing'),
-        StringStruct('ProductName', 'Turing System Monitor'),
+        StringStruct('ProductName', 'Turing Smart Screen'),
         StringStruct('ProductVersion', '1.2.3'),
         StringStruct('FileVersion', '1.2.3')])
       ]), 
