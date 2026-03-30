@@ -11,7 +11,7 @@ uptime~=3.0.1          # For System Uptime
 requests~=2.32.5       # HTTP library
 ping3~=5.1.5           # ICMP ping implementation using raw socket
 pyinstaller~=6.19.0    # bundles a Python application and all its dependencies into a single package
-
+PyQt6~=6.8.0           # Modern GUI toolkit for true transparent desktop widget
 # Image generation
 Pillow~=11.3.0; python_version < "3.10"   # For Python 3.9, only Pillow 11.x is supported
 Pillow~=12.1.1; python_version >= "3.10"  # For Python 3.10+, any Pillow 12.x is fine

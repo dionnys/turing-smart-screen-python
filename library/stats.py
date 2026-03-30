@@ -119,6 +119,8 @@ def display_themed_value(theme_data, value, min_size=0, unit=''):
         font_color=theme_data.get("FONT_COLOR", (0, 0, 0)),
         background_color=theme_data.get("BACKGROUND_COLOR", (255, 255, 255)),
         background_image=get_theme_file_path(theme_data.get("BACKGROUND_IMAGE", None)),
+        background_radius=theme_data.get("BACKGROUND_RADIUS", 0),
+        background_padding=theme_data.get("BACKGROUND_PADDING", 0),
         align=theme_data.get("ALIGN", "left"),
         anchor=theme_data.get("ANCHOR", "lt"),
         outline_width=theme_data.get("FONT_OUTLINE", 2),
@@ -160,7 +162,10 @@ def display_themed_progress_bar(theme_data, value):
         bar_color=theme_data.get("BAR_COLOR", (0, 0, 0)),
         bar_outline=theme_data.get("BAR_OUTLINE", False),
         background_color=theme_data.get("BACKGROUND_COLOR", (255, 255, 255)),
-        background_image=get_theme_file_path(theme_data.get("BACKGROUND_IMAGE", None))
+        background_image=get_theme_file_path(theme_data.get("BACKGROUND_IMAGE", None)),
+        bar_segments=theme_data.get("BAR_SEGMENTS", 0),
+        bar_segment_sep=theme_data.get("BAR_SEGMENT_SEP", 2),
+        bar_base_color=theme_data.get("BAR_BACKGROUND_COLOR", (50, 50, 55))
     )
 
 
@@ -197,6 +202,8 @@ def display_themed_radial_bar(theme_data, value, min_size=0, unit='', custom_tex
         font=config.FONTS_DIR + theme_data.get("FONT", "roboto-mono/RobotoMono-Regular.ttf"),
         font_size=theme_data.get("FONT_SIZE", 10),
         font_color=theme_data.get("FONT_COLOR", (0, 0, 0)),
+        font_outline=theme_data.get("FONT_OUTLINE", 0),
+        font_outline_color=theme_data.get("FONT_OUTLINE_COLOR", (0, 0, 0)),
         background_color=theme_data.get("BACKGROUND_COLOR", (0, 0, 0)),
         background_image=get_theme_file_path(theme_data.get("BACKGROUND_IMAGE", None)),
         custom_bbox=theme_data.get("CUSTOM_BBOX", (0, 0, 0, 0)),
@@ -940,9 +947,11 @@ class Weather:
                 wdescription_theme_data.update({'X': 50, 'Y': 60, 'FONT_SIZE': 16, 'FONT_COLOR': (255, 255, 255), 'BACKGROUND_COLOR': (0, 0, 0)})
             if 'X' not in wcity_theme_data:
                 wcity_theme_data.update({'X': 100, 'Y': 60, 'FONT_SIZE': 16, 'FONT_COLOR': (255, 255, 255), 'BACKGROUND_COLOR': (0, 0, 0)})
-            wtemperature_theme_data['SHOW'] = True
-            wdescription_theme_data['SHOW'] = True
-            wcity_theme_data['SHOW'] = True
+            
+            # Sólo forzamos SHOW si no estaban explícitamente configurados en el tema
+            if 'SHOW' not in wtemperature_theme_data: wtemperature_theme_data['SHOW'] = True
+            if 'SHOW' not in wdescription_theme_data: wdescription_theme_data['SHOW'] = True
+            if 'SHOW' not in wcity_theme_data: wcity_theme_data['SHOW'] = True
 
         activate = True if wtemperature_theme_data.get("SHOW") or wfelt_theme_data.get(
             "SHOW") or wupdatetime_theme_data.get("SHOW") or wdescription_theme_data.get(
@@ -954,6 +963,7 @@ class Weather:
             time = None
             humidity = None
             city = None
+            icon_code = None
             if HW_SENSORS in ["STATIC", "STUB"]:
                 temp = "17.5°C"
                 feel = "(17.2°C)"
@@ -961,6 +971,7 @@ class Weather:
                 time = "@15:33"
                 humidity = "45%"
                 city = "City"
+                icon_code = "04d"
             else:
                 # API Parameters
                 lat = config.CONFIG_DATA['config'].get('WEATHER_LATITUDE', "")
@@ -980,6 +991,7 @@ class Weather:
                             desc = data['weather'][0]['description'].capitalize()
                             humidity = f"{data['main']['humidity']:.0f}%"
                             city = data.get('name', '').replace('Provincia de ', '').replace('Ciudad de ', '')
+                            icon_code = data['weather'][0].get('icon', None)
                             if len(city) > 13:
                                 city = city[:12] + "."
                             now = datetime.datetime.now()
@@ -1007,6 +1019,88 @@ class Weather:
             display_themed_value(theme_data=wcity_theme_data, value=city)
             # Display Weather Description (or error message)
             display_themed_value(theme_data=wdescription_theme_data, value=desc)
+            
+            # Display Weather Icon
+            wicon_theme_data = weather_theme_data.get('ICON', {}).get('IMAGE', {})
+            if wicon_theme_data.get('SHOW', False) and icon_code:
+                import os
+                
+                cache_dir = os.path.join("res", "icons", "weather")
+                if not os.path.exists(cache_dir):
+                    os.makedirs(cache_dir, exist_ok=True)
+                
+                icon_path = os.path.join(cache_dir, f"{icon_code}.png")
+                if not os.path.exists(icon_path):
+                    # Download it once!
+                    url = f"https://openweathermap.org/img/wn/{icon_code}@2x.png"
+                    try:
+                        resp = requests.get(url, timeout=5)
+                        if resp.status_code == 200:
+                            with open(icon_path, 'wb') as f:
+                                f.write(resp.content)
+                        else:
+                            icon_path = None
+                    except:
+                        icon_path = None
+                
+                if icon_path and os.path.exists(icon_path):
+                    from library.display import display
+                    from PIL import Image
+                    
+                    try:
+                        # Open and resize the icon
+                        width = wicon_theme_data.get("WIDTH", 60)
+                        height = wicon_theme_data.get("HEIGHT", 60)
+                        x = wicon_theme_data.get("X", 0)
+                        y = wicon_theme_data.get("Y", 0)
+                        
+                        # Renderizar el ícono en 2x para anti-aliasing óptimo
+                        oversample = 2
+                        img = Image.open(icon_path).convert("RGBA")
+                        img = img.resize((width * oversample, height * oversample), Image.Resampling.LANCZOS)
+                        img = img.resize((width, height), Image.Resampling.LANCZOS)
+                        
+                        logger.debug(f"Drawing Weather Icon: {icon_code} at {x},{y} ({width}x{height})")
+                        
+                        bg_img_path = wicon_theme_data.get("BACKGROUND_IMAGE", None)
+                        _transp_mode = config.CONFIG_DATA.get("config", {}).get("DESKTOP_WIDGET_TRANSPARENT_BG", False)
+
+                        if _transp_mode:
+                            # ── Modo transparente: ícono flotante con drop-shadow ──────
+                            # Ignoramos BACKGROUND_IMAGE (causaría caja oscura del tema)
+                            from PIL import ImageFilter
+                            pad = 6
+                            canvas = Image.new("RGBA", (width + pad, height + pad), (0, 0, 0, 0))
+                            # Sombra suave basada en el canal alpha del ícono
+                            alpha_ch = img.split()[3]
+                            shadow_solid = Image.new("RGBA", img.size, (0, 0, 0, 160))
+                            shadow_solid.putalpha(alpha_ch)
+                            shadow_layer = Image.new("RGBA", (width + pad, height + pad), (0, 0, 0, 0))
+                            shadow_layer.paste(shadow_solid, (pad // 2 + 2, pad // 2 + 2), shadow_solid)
+                            shadow_layer = shadow_layer.filter(ImageFilter.GaussianBlur(radius=3))
+                            canvas.paste(shadow_layer, (0, 0), shadow_layer)
+                            canvas.paste(img, (pad // 2, pad // 2), img)
+                            display.lcd.DisplayPILImage(canvas, x, y)
+                            logger.debug("Weather icon: transparent + shadow mode.")
+                        elif bg_img_path:
+                            # ── Modo opaco con imagen de fondo del tema ─────────────────
+                            bg_img_path = get_theme_file_path(bg_img_path)
+                            bg = display.lcd.open_image(bg_img_path).crop(
+                                (x, y, x + width, y + height)
+                            ).convert("RGBA")
+                            bg.paste(img, (0, 0), img)
+                            display.lcd.DisplayPILImage(bg.convert("RGB"), x, y)
+                            logger.debug("Weather icon: themed background mode.")
+                        else:
+                            # ── Modo opaco con color sólido ─────────────────────────────
+                            bg_color = wicon_theme_data.get("BACKGROUND_COLOR", (0, 0, 0))
+                            bg_tuple = tuple(bg_color) + (255,) if len(tuple(bg_color)) == 3 else tuple(bg_color)
+                            bg = Image.new("RGBA", (width, height), bg_tuple)
+                            bg.paste(img, (0, 0), img)
+                            display.lcd.DisplayPILImage(bg.convert("RGBA"), x, y)
+                            logger.debug("Weather icon: solid background mode.")
+                    except Exception as e:
+                        logger.error(f"Error drawing weather icon: {e}")
 
 
 class Ping:

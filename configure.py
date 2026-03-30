@@ -233,6 +233,7 @@ class TuringConfigWindow:
         # When window gets focus again, reload theme preview in case it has been updated by theme editor
         self.window.bind("<FocusIn>", self.on_theme_change)
         self.window.after(0, self.on_fan_speed_update)
+        self.window.protocol("WM_DELETE_WINDOW", self.on_close)
 
         # Subwindow for weather/ping config.
         self.more_config_window = MoreConfigWindow(self)
@@ -397,6 +398,37 @@ class TuringConfigWindow:
                     "Para capturar correctamente la temperatura real de procesadores recientes (AMD Ryzen/Intel) "
                     "sin que la seguridad de Windows te lo devuelva en 0°C, sugerimos instalar el programa libre 'Core Temp'.\n\n"
                     "¡Una vez instalado, el monitor Turing se conectará a él automáticamente y lo lanzará de fondo!")
+
+    def on_close(self):
+        """Diálogo de salida con explicación."""
+        import tkinter.messagebox as messagebox
+
+        if USE_ES:
+            title = "¿Guardar antes de salir?"
+            msg = (
+                "Los cambios se aplican automáticamente al widget.\n"
+                "Para cambios de hardware o tema necesitarás reiniciar el monitor.\n\n"
+                "  ✔ Sí       →  Guardar configuración y cerrar\n"
+                "  ✘ No      →  Cerrar sin guardar\n"
+                "  ✖ Cancelar →  Volver sin cerrar"
+            )
+        else:
+            title = "Save before exit?"
+            msg = (
+                "Widget changes apply live automatically.\n"
+                "Hardware or theme changes require restarting the monitor.\n\n"
+                "  ✔ Yes    →  Save and close\n"
+                "  ✘ No     →  Close without saving\n"
+                "  ✖ Cancel →  Go back"
+            )
+
+        result = messagebox.askyesnocancel(title, msg)
+        if result is True:
+            self.save_config_values()
+            self.window.destroy()
+        elif result is False:
+            self.window.destroy()
+        # result is None → cancelar, no hacer nada
 
     def run(self):
         self.window.mainloop()
@@ -615,7 +647,13 @@ class TuringConfigWindow:
                 import winreg
                 key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Run", 0, winreg.KEY_SET_VALUE)
                 if self.autostart_var.get():
-                    exe_path = os.path.join(MAIN_DIRECTORY, "main.exe")
+                    if getattr(sys, 'frozen', False):
+                        # PyInstaller creates executable in the parent dir of _internal, or directly depending on version
+                        main_exe_dir = os.path.dirname(sys.executable)
+                        exe_path = os.path.join(main_exe_dir, "main.exe")
+                    else:
+                        exe_path = os.path.join(MAIN_DIRECTORY, "main.exe")
+                        
                     if os.path.exists(exe_path):
                         target = f'"{exe_path}"'
                     else:
@@ -831,15 +869,15 @@ class WidgetConfigWindow:
         self.transparent_bg_cb.place(x=20, y=100)
 
         ttk.Label(self.window, text=T("Scale / Size:")).place(x=20, y=140)
-        self.scale_cb = ttk.Combobox(self.window, values=["25%", "50%", "75%", "100%", "125%", "150%"], state='readonly')
+        self.scale_cb = ttk.Combobox(self.window, values=["25%", "50%", "75%", "100%", "125%", "150%"])
         self.scale_cb.place(x=230, y=135)
 
         ttk.Label(self.window, text=T("Opacity (entire window):")).place(x=20, y=170)
-        self.alpha_cb = ttk.Combobox(self.window, values=["10%", "30%", "50%", "75%", "90%", "100%"], state='readonly')
+        self.alpha_cb = ttk.Combobox(self.window, values=["10%", "30%", "50%", "75%", "90%", "100%"])
         self.alpha_cb.place(x=230, y=165)
 
         ttk.Label(self.window, text=T("Rounded Corners Radius:")).place(x=20, y=200)
-        self.radius_cb = ttk.Combobox(self.window, values=["0", "10", "15", "25", "35", "50"], state='readonly')
+        self.radius_cb = ttk.Combobox(self.window, values=["0", "10", "15", "25", "35", "50"])
         self.radius_cb.place(x=230, y=195)
 
         self.save_btn = ttk.Button(self.window, text=T("Save & Apply (Needs Restart)"), command=self.save)
@@ -895,9 +933,17 @@ class WidgetConfigWindow:
         cfg['config']['DESKTOP_WIDGET_TRANSPARENT_BG'] = self.transparent_bg_var.get()
         if 'DESKTOP_WIDGET_NO_BG' in cfg['config']:
             del cfg['config']['DESKTOP_WIDGET_NO_BG']
-        cfg['config']['DESKTOP_WIDGET_SCALE'] = int(self.scale_cb.get().replace("%", ""))
-        cfg['config']['DESKTOP_WIDGET_ALPHA'] = int(self.alpha_cb.get().replace("%", ""))
-        cfg['config']['DESKTOP_WIDGET_RADIUS'] = int(self.radius_cb.get())
+        import re
+        def clean_int(val, default):
+            try:
+                digits = re.sub(r'\D', '', str(val))
+                return int(digits) if digits else default
+            except Exception:
+                return default
+
+        cfg['config']['DESKTOP_WIDGET_SCALE'] = clean_int(self.scale_cb.get(), 100)
+        cfg['config']['DESKTOP_WIDGET_ALPHA'] = clean_int(self.alpha_cb.get(), 100)
+        cfg['config']['DESKTOP_WIDGET_RADIUS'] = clean_int(self.radius_cb.get(), 0)
         
         import ruamel.yaml
         with open(MAIN_DIRECTORY + "config.yaml", "w", encoding='utf-8') as file:

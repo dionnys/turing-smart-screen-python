@@ -23,6 +23,8 @@
 import os
 import queue
 import sys
+import threading
+import time
 from pathlib import Path
 import yaml
 
@@ -85,3 +87,42 @@ load_theme()
 
 # Queue containing the serial requests to send to the screen
 update_queue = queue.Queue()
+
+_CONFIG_PATH = MAIN_DIRECTORY / "config.yaml"
+
+
+def reload_config():
+    """Recarga config.yaml en CONFIG_DATA sin reemplazar la referencia al dict.
+    Todos los módulos que ya tienen 'from library import config' verán los nuevos
+    valores porque actualizamos el mismo objeto en memoria."""
+    global CONFIG_DATA
+    try:
+        fresh = load_yaml(_CONFIG_PATH)
+        CONFIG_DATA.clear()
+        CONFIG_DATA.update(fresh)
+        logger.debug("config.yaml recargado automáticamente.")
+    except Exception as e:
+        logger.warning(f"Error recargando config.yaml: {e}")
+
+
+def _start_config_watcher():
+    """Hilo daemon que vigila config.yaml y recarga cuando detecta cambios."""
+    _last_mtime = [0.0]  # lista para mutabilidad en closure
+
+    def _watch():
+        while True:
+            try:
+                mtime = os.stat(_CONFIG_PATH).st_mtime
+                if mtime != _last_mtime[0]:
+                    if _last_mtime[0] != 0.0:  # ignorar la primera lectura
+                        reload_config()
+                    _last_mtime[0] = mtime
+            except Exception:
+                pass
+            time.sleep(1)  # verificar cada segundo
+
+    t = threading.Thread(target=_watch, daemon=True, name="config-watcher")
+    t.start()
+
+
+_start_config_watcher()

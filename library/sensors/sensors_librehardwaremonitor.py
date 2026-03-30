@@ -308,6 +308,11 @@ class Cpu(sensors.Cpu):
 
         cpu = get_hw_and_update(Hardware.HardwareType.Cpu)
         try:
+            # First priority: AMD Tdie / Tctl package temperature
+            for sensor in cpu.Sensors:
+                if sensor.SensorType == Hardware.SensorType.Temperature and ("Tdie" in str(sensor.Name) or "Tctl" in str(sensor.Name)) and sensor.Value is not None:
+                    return float(sensor.Value)
+            
             # By default, the average temperature of all CPU cores will be used
             for sensor in cpu.Sensors:
                 if sensor.SensorType == Hardware.SensorType.Temperature and str(sensor.Name).startswith(

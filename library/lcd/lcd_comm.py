@@ -101,6 +101,18 @@ class LcdComm(ABC):
                 detected_port = self.auto_detect_com_port()
                 if not detected_port:
                     logger.error("Cannot find COM port automatically. Waiting 5s for device to be connected...")
+
+                    # ── Bypass para widget independiente ─────────────────
+                    # Si el widget está habilitado y no hay pantalla física,
+                    # no bloqueamos. display.py creará LcdVirtual como fallback.
+                    from library import config as _cfg
+                    if _cfg.CONFIG_DATA.get("config", {}).get("ENABLE_DESKTOP_WIDGET", False):
+                        logger.warning(
+                            "ENABLE_DESKTOP_WIDGET=true — widget will run in standalone (LcdVirtual) mode."
+                        )
+                        self.lcd_serial = None
+                        return  # Sin bloquear; display.py usa LcdVirtual
+
                     # Sleep in small bursts to allow fast exit if stopping
                     for i in range(10):
                         if scheduler.STOPPING: return
@@ -117,7 +129,20 @@ class LcdComm(ABC):
                 logger.info(f"Successfully opened COM port {self.com_port}")
                 break
             except Exception as e:
-                logger.error(f"Cannot open COM port {self.com_port}: {e}. Retrying in 5 seconds...")
+                logger.error(f"Cannot open COM port {self.com_port}: {e}.")
+                
+                # Para hacer al widget completamente independiente de la pantalla física:
+                # Si el usuario tiene habilitado el widget, no nos quedamos en un ciclo bloqueante.
+                # Aceptamos que la pantalla no está y continuamos para que el widget arranque.
+                from library import config
+                widget_enabled = config.CONFIG_DATA.get("config", {}).get("ENABLE_DESKTOP_WIDGET", False)
+                
+                if widget_enabled:
+                    logger.warning("Desktop widget is enabled. Bypassing physical COM port loop so widget can run independently.")
+                    self.lcd_serial = None
+                    break
+                
+                logger.error("Retrying in 5 seconds...")
                 for i in range(10):
                     if scheduler.STOPPING: return
                     time.sleep(0.5)
@@ -127,15 +152,18 @@ class LcdComm(ABC):
             self.lcd_serial.close()
 
     def serial_write(self, data: bytes):
-        assert self.lcd_serial is not None
+        if self.lcd_serial is None:
+            return
         self.lcd_serial.write(data)
 
     def serial_read(self, size: int) -> bytes:
-        assert self.lcd_serial is not None
+        if self.lcd_serial is None:
+            return b"\x00" * size
         return self.lcd_serial.read(size)
 
     def serial_readall(self) -> bytes:
-        assert self.lcd_serial is not None
+        if self.lcd_serial is None:
+            return b""
         return self.lcd_serial.readall()
 
     def serial_flush_input(self):
@@ -165,12 +193,13 @@ class LcdComm(ABC):
             logger.warning("(Write line) Too fast! Slow down!")
         except serial.SerialException:
             # Error writing data to device: close and reopen serial port, try to write again
-            logger.error(
-                "SerialException: Failed to send serial data to device. Closing and reopening COM port before retrying once.")
-            self.closeSerial()
-            time.sleep(1)
-            self.openSerial()
-            self.serial_write(line)
+            if self.lcd_serial is not None:
+                logger.error(
+                    "SerialException: Failed to send serial data to device. Closing and reopening COM port before retrying once.")
+                self.closeSerial()
+                time.sleep(1)
+                self.openSerial()
+                self.serial_write(line)
 
     def ReadData(self, readSize: int):
         try:
@@ -182,12 +211,14 @@ class LcdComm(ABC):
             logger.warning("(Read data) Too fast! Slow down!")
         except serial.SerialException:
             # Error writing data to device: close and reopen serial port, try to read again
-            logger.error(
-                "SerialException: Failed to read serial data from device. Closing and reopening COM port before retrying once.")
-            self.closeSerial()
-            time.sleep(1)
-            self.openSerial()
-            return self.serial_read(readSize)
+            if self.lcd_serial is not None:
+                logger.error(
+                    "SerialException: Failed to read serial data from device. Closing and reopening COM port before retrying once.")
+                self.closeSerial()
+                time.sleep(1)
+                self.openSerial()
+                return self.serial_read(readSize)
+            return b"\x00" * readSize
 
     @staticmethod
     @abstractmethod
@@ -257,6 +288,8 @@ class LcdComm(ABC):
             font_color: Color = (0, 0, 0),
             background_color: Color = (255, 255, 255),
             background_image: Optional[str] = None,
+            background_radius: int = 0,
+            background_padding: int = 0,
             align: str = 'left',
             anchor: str = 'la',
             outline_width: int = 2,
@@ -280,12 +313,10 @@ class LcdComm(ABC):
             height = font_size
 
         if background_image is None:
-            # A text bitmap is created with max width/height by default : text with solid background
-            text_image = Image.new(
-                'RGB',
-                (self.get_width(), self.get_height()),
-                background_color
-            )
+            if background_radius > 0:
+                text_image = Image.new('RGBA', (self.get_width(), self.get_height()), (0, 0, 0, 0))
+            else:
+                text_image = Image.new('RGB', (self.get_width(), self.get_height()), background_color)
         else:
             # The text bitmap is created from provided background image : text with transparent background
             text_image = self.open_image(background_image)
@@ -318,6 +349,15 @@ class LcdComm(ABC):
             else:
                 y = top
 
+        if background_padding > 0:
+            left -= background_padding
+            top -= background_padding
+            right += background_padding
+            bottom += background_padding
+
+        if background_image is None and background_radius > 0:
+            d.rounded_rectangle([left, top, right - 1, bottom - 1], radius=background_radius, fill=background_color)
+
         # Draw text onto the background image with specified color & font
         d.text((x, y), text, font=ttfont, fill=font_color, align=align, anchor=anchor, stroke_width=outline_width, stroke_fill=parse_color(outline_color))
 
@@ -337,7 +377,10 @@ class LcdComm(ABC):
                            bar_color: Color = (0, 0, 0),
                            bar_outline: bool = True,
                            background_color: Color = (255, 255, 255),
-                           background_image: Optional[str] = None):
+                           background_image: Optional[str] = None,
+                           bar_segments: int = 0,
+                           bar_segment_sep: int = 2,
+                           bar_base_color: Color = (50, 50, 55)):
         # Generate a progress bar and display it
         # Provide the background image path to display progress bar with transparent background
 
@@ -368,11 +411,23 @@ class LcdComm(ABC):
             bar_image = bar_image.crop(box=(x, y, x + width, y + height))
 
         # Draw progress bar
-        bar_filled_width = (value / (max_value - min_value) * width) - 1
+        bar_filled_width = (value / (max_value - min_value) * width)
         if bar_filled_width < 0:
             bar_filled_width = 0
+            
         draw = ImageDraw.Draw(bar_image)
-        draw.rectangle([0, 0, bar_filled_width, height - 1], fill=bar_color, outline=bar_color)
+        
+        if bar_segments > 0:
+            segment_width = (width - (bar_segments - 1) * bar_segment_sep) / bar_segments
+            if segment_width > 0:
+                segments_filled = int(round((value - min_value) / (max_value - min_value) * bar_segments))
+                # Overlap with filled blocks
+                for i in range(segments_filled):
+                    sx = int(i * (segment_width + bar_segment_sep))
+                    draw.rectangle([sx, 0, sx + int(segment_width), height - 1], fill=bar_color, outline=bar_color)
+        else:
+            x1_coord = max(0, int(bar_filled_width) - 1)
+            draw.rectangle([0, 0, x1_coord, height - 1], fill=bar_color, outline=bar_color)
 
         if bar_outline:
             # Draw outline
@@ -514,6 +569,8 @@ class LcdComm(ABC):
                                  font: str = "./res/fonts/roboto/Roboto-Black.ttf",
                                  font_size: int = 20,
                                  font_color: Color = (0, 0, 0),
+                                 font_outline: int = 0,
+                                 font_outline_color: Color = (0, 0, 0),
                                  bar_color: Color = (0, 0, 0),
                                  background_color: Color = (255, 255, 255),
                                  background_image: Optional[str] = None,
@@ -686,7 +743,7 @@ class LcdComm(ABC):
             left, top, right, bottom = ttfont.getbbox(text)
             w, h = right - left, bottom - top
             draw.text((radius - w / 2 + text_offset[0], radius - top - h / 2 + text_offset[1]), text,
-                      font=ttfont, fill=font_color)
+                      font=ttfont, fill=font_color, stroke_width=font_outline, stroke_fill=parse_color(font_outline_color))
 
         if custom_bbox[0] != 0 or custom_bbox[1] != 0 or custom_bbox[2] != 0 or custom_bbox[3] != 0:
             bar_image = bar_image.crop(box=custom_bbox)

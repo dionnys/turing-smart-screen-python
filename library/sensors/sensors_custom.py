@@ -166,7 +166,7 @@ class MotherboardFanRPM(CustomDataSource):
 
     def as_string(self) -> str:
         val = int(self.as_numeric())
-        return f'{val} % Fan'
+        return f'{val}'
 
     def last_values(self) -> List[float]:
         return []
@@ -187,7 +187,7 @@ class MotherboardPumpRPM(CustomDataSource):
 
     def as_string(self) -> str:
         val = int(self.as_numeric())
-        return f'{val} % Pump'
+        return f'{val}'
 
     def last_values(self) -> List[float]:
         return []
@@ -248,19 +248,23 @@ class UserFlag(CustomDataSource):
 
 class PublicIP(CustomDataSource):
     _cached_ip = None
+    _last_checked = 0
     
     def as_numeric(self) -> float:
         return 0.0
 
     def as_string(self) -> str:
-        if PublicIP._cached_ip is None:
+        import time
+        if PublicIP._cached_ip is None or time.time() - PublicIP._last_checked > 300:
             try:
                 import urllib.request
                 req = urllib.request.Request('https://api.ipify.org', headers={'User-Agent': 'Mozilla/5.0'})
                 with urllib.request.urlopen(req, timeout=5) as response:
                     PublicIP._cached_ip = response.read().decode('utf-8')
+                    PublicIP._last_checked = time.time()
             except:
-                PublicIP._cached_ip = "IP Unknown"
+                if PublicIP._cached_ip is None:
+                    PublicIP._cached_ip = "IP Unknown"
         return f"IP: {PublicIP._cached_ip}"
 
     def last_values(self) -> List[float]:

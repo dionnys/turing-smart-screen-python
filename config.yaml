@@ -60,11 +60,11 @@ config:
   DESKTOP_WIDGET_ON_TOP: false
   DESKTOP_WIDGET_LOCKED: true
   DESKTOP_WIDGET_SCALE: 50
-  DESKTOP_WIDGET_ALPHA: 90
-  DESKTOP_WIDGET_RADIUS: 10
+  DESKTOP_WIDGET_ALPHA: 100
+  DESKTOP_WIDGET_RADIUS: 15
   DESKTOP_WIDGET_X: -1027
   DESKTOP_WIDGET_Y: -120
-  DESKTOP_WIDGET_TRANSPARENT_BG: false
+  DESKTOP_WIDGET_TRANSPARENT_BG: true
 display:
   # Display revision:
   # - A         for Turing 3.5" and UsbPCMonitor 3.5"/5"
@@ -75,7 +75,7 @@ display:
   # - WEACT_B   for WeAct Studio Display FS V1 0.96"
   # - SIMU for simulated display (image written in screencap.png). Width & height will be detected from the theme
   # To identify your smart screen: https://github.com/dionnys/turing-smart-screen-python/wiki/Hardware-revisions
-  REVISION: SIMU
+  REVISION: C
 
   # Display Brightness
   # Set this as the desired %, 0 being completely dark and 100 being max brightness

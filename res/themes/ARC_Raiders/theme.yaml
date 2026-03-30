@@ -65,6 +65,68 @@ static_text:
     FONT_COLOR: 255, 255, 255
     FONT: roboto-mono/RobotoMono-Bold.ttf
     BACKGROUND_IMAGE: background.png
+  FAN_MIN:
+    TEXT: "0"
+    X: 1320
+    Y: 405
+    FONT_SIZE: 14
+    FONT_COLOR: 150, 150, 150
+    FONT_OUTLINE: 2
+    FONT_OUTLINE_COLOR: 0, 0, 0
+    FONT: roboto-mono/RobotoMono-Bold.ttf
+    BACKGROUND_IMAGE: background.png
+  FAN_MAX:
+    TEXT: "100%"
+    X: 1420
+    Y: 405
+    FONT_SIZE: 14
+    FONT_COLOR: 150, 150, 150
+    FONT_OUTLINE: 2
+    FONT_OUTLINE_COLOR: 0, 0, 0
+    FONT: roboto-mono/RobotoMono-Bold.ttf
+    BACKGROUND_IMAGE: background.png
+  PUMP_MIN:
+    TEXT: "0"
+    X: 1620
+    Y: 405
+    FONT_SIZE: 14
+    FONT_COLOR: 150, 150, 150
+    FONT_OUTLINE: 2
+    FONT_OUTLINE_COLOR: 0, 0, 0
+    FONT: roboto-mono/RobotoMono-Bold.ttf
+    BACKGROUND_IMAGE: background.png
+  PUMP_MAX:
+    TEXT: "100%"
+    X: 1720
+    Y: 405
+    FONT_SIZE: 14
+    FONT_COLOR: 150, 150, 150
+    FONT_OUTLINE: 2
+    FONT_OUTLINE_COLOR: 0, 0, 0
+    FONT: roboto-mono/RobotoMono-Bold.ttf
+    BACKGROUND_IMAGE: background.png
+  FAN_LABEL:
+    TEXT: Fan
+    X: 1370
+    Y: 405
+    ANCHOR: mm
+    FONT_SIZE: 18
+    FONT_COLOR: 180, 180, 180
+    FONT_OUTLINE: 2
+    FONT_OUTLINE_COLOR: 0, 0, 0
+    FONT: roboto-mono/RobotoMono-Bold.ttf
+    BACKGROUND_IMAGE: background.png
+  PUMP_LABEL:
+    TEXT: Pump
+    X: 1670
+    Y: 405
+    ANCHOR: mm
+    FONT_SIZE: 18
+    FONT_COLOR: 180, 180, 180
+    FONT_OUTLINE: 2
+    FONT_OUTLINE_COLOR: 0, 0, 0
+    FONT: roboto-mono/RobotoMono-Bold.ttf
+    BACKGROUND_IMAGE: background.png
 
 STATS:
   WEATHER:
@@ -96,7 +158,7 @@ STATS:
         BACKGROUND_IMAGE: background.png
     WEATHER_DESCRIPTION:
       TEXT:
-        SHOW: True
+        SHOW: False
         X: 520
         Y: 420
         WIDTH: 300
@@ -105,6 +167,14 @@ STATS:
         FONT_SIZE: 34
         FONT_COLOR: 255, 255, 255
         FONT: roboto-mono/RobotoMono-Bold.ttf
+        BACKGROUND_IMAGE: background.png
+    ICON:
+      IMAGE:
+        SHOW: True
+        X: 510
+        Y: 400
+        WIDTH: 80
+        HEIGHT: 80
         BACKGROUND_IMAGE: background.png
 
   PING:
@@ -222,14 +292,16 @@ STATS:
       GRAPH:
         SHOW: True
         X: 1306
-        Y: 48
+        Y: 43
         WIDTH: 374
-        HEIGHT: 16
+        HEIGHT: 26
         MIN_VALUE: 0
         MAX_VALUE: 100
         BAR_COLOR: 255, 255, 255
-        BAR_OUTLINE: False
-        BACKGROUND_COLOR: 35, 35, 35
+        BAR_OUTLINE: True
+        BAR_SEGMENTS: 20
+        BAR_SEGMENT_SEP: 4
+        BACKGROUND_IMAGE: background.png
     TEMPERATURE:
       INTERVAL: 5
       TEXT:
@@ -251,14 +323,16 @@ STATS:
       GRAPH:
         SHOW: True
         X: 1306
-        Y: 89
+        Y: 84
         WIDTH: 374
-        HEIGHT: 16
+        HEIGHT: 26
         MIN_VALUE: 0
         MAX_VALUE: 100
         BAR_COLOR: 255, 255, 255
-        BAR_OUTLINE: False
-        BACKGROUND_COLOR: 35, 35, 35
+        BAR_OUTLINE: True
+        BAR_SEGMENTS: 20
+        BAR_SEGMENT_SEP: 4
+        BACKGROUND_IMAGE: background.png
       TEXT:
         SHOW: True
         SHOW_UNIT: True
@@ -291,14 +365,16 @@ STATS:
       GRAPH:
         SHOW: True
         X: 1306
-        Y: 172
+        Y: 167
         WIDTH: 374
-        HEIGHT: 16
+        HEIGHT: 26
         MIN_VALUE: 0
         MAX_VALUE: 100
         BAR_COLOR: 255, 255, 255
-        BAR_OUTLINE: False
-        BACKGROUND_COLOR: 35, 35, 35
+        BAR_OUTLINE: True
+        BAR_SEGMENTS: 20
+        BAR_SEGMENT_SEP: 4
+        BACKGROUND_IMAGE: background.png
       TEXT:
         SHOW: True
         SHOW_UNIT: True
@@ -331,14 +407,16 @@ STATS:
       GRAPH:
         SHOW: True
         X: 1306
-        Y: 130
+        Y: 125
         WIDTH: 374
-        HEIGHT: 16
+        HEIGHT: 26
         MIN_VALUE: 0
         MAX_VALUE: 100
         BAR_COLOR: 255, 255, 255
-        BAR_OUTLINE: False
-        BACKGROUND_COLOR: 35, 35, 35
+        BAR_OUTLINE: True
+        BAR_SEGMENTS: 20
+        BAR_SEGMENT_SEP: 4
+        BACKGROUND_IMAGE: background.png
       PERCENT_TEXT:
         SHOW: True
         SHOW_UNIT: True
@@ -416,61 +494,54 @@ STATS:
     INTERVAL: 1
     MotherboardFanRPM:
       INTERVAL: 1
-      TEXT:
-        SHOW: True
-        SHOW_UNIT: False
-        X: 1320
-        Y: 390
-        WIDTH: 150
-        HEIGHT: 20
-        ANCHOR: mm
-        FONT_SIZE: 20
-        FONT_COLOR: 180, 180, 180
-        FONT: roboto-mono/RobotoMono-Bold.ttf
-        BACKGROUND_IMAGE: background.png
+
       RADIAL:
         SHOW: True
-        X: 1320
-        Y: 325
-        RADIUS: 40
-        WIDTH: 15
+        SHOW_TEXT: True
+        FONT_SIZE: 28
+        FONT_COLOR: 255, 255, 255
+        FONT_OUTLINE: 2
+        FONT_OUTLINE_COLOR: 0, 0, 0
+        FONT: roboto-mono/RobotoMono-Bold.ttf
+        X: 1370
+        Y: 340
+        RADIUS: 46
+        WIDTH: 10
         MIN_VALUE: 0
         MAX_VALUE: 100
-        ANGLE_START: 135
-        ANGLE_END: 45
+        ANGLE_START: 140
+        ANGLE_END: 40
         CLOCKWISE: True
+        ANGLE_STEPS: 15
+        ANGLE_SEP: 3
         BAR_COLOR: 255, 255, 255
-        BAR_BACKGROUND_COLOR: 60, 60, 60
-        DRAW_BAR_BACKGROUND: True
+        BAR_BACKGROUND_COLOR: 50, 50, 55
+        DRAW_BAR_BACKGROUND: False
         BACKGROUND_IMAGE: background.png
     MotherboardPumpRPM:
       INTERVAL: 1
-      TEXT:
-        SHOW: True
-        SHOW_UNIT: False
-        X: 1620
-        Y: 390
-        WIDTH: 150
-        HEIGHT: 20
-        ANCHOR: mm
-        FONT_SIZE: 20
-        FONT_COLOR: 180, 180, 180
-        FONT: roboto-mono/RobotoMono-Bold.ttf
-        BACKGROUND_IMAGE: background.png
       RADIAL:
         SHOW: True
-        X: 1620
-        Y: 325
-        RADIUS: 40
-        WIDTH: 15
+        SHOW_TEXT: True
+        FONT_SIZE: 28
+        FONT_COLOR: 255, 255, 255
+        FONT_OUTLINE: 2
+        FONT_OUTLINE_COLOR: 0, 0, 0
+        FONT: roboto-mono/RobotoMono-Bold.ttf
+        X: 1670
+        Y: 340
+        RADIUS: 46
+        WIDTH: 10
         MIN_VALUE: 0
         MAX_VALUE: 100
-        ANGLE_START: 135
-        ANGLE_END: 45
+        ANGLE_START: 140
+        ANGLE_END: 40
         CLOCKWISE: True
+        ANGLE_STEPS: 15
+        ANGLE_SEP: 3
         BAR_COLOR: 255, 255, 255
-        BAR_BACKGROUND_COLOR: 60, 60, 60
-        DRAW_BAR_BACKGROUND: True
+        BAR_BACKGROUND_COLOR: 50, 50, 55
+        DRAW_BAR_BACKGROUND: False
         BACKGROUND_IMAGE: background.png
     UserFlag:
       INTERVAL: 60

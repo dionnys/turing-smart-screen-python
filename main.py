@@ -209,7 +209,7 @@ if __name__ == "__main__":
         lang_code = CONFIG_DATA['config'].get('APP_LANGUAGE', lang_code)
         USE_ES = "es" in str(lang_code).lower()
         cfg_text = "Configurar" if USE_ES else "Configure"
-        exit_text = "Salir (Cerrar monitor)" if USE_ES else "Exit"
+        exit_text = "Salir" if USE_ES else "Exit"
 
         if not CONFIG_DATA['config'].get('TRAY_ICON_HIDDEN', False):
             tray_icon = pystray.Icon(
@@ -352,26 +352,16 @@ if __name__ == "__main__":
                                            hinst,
                                            None)
             import gc
-            import os
-            import sys
-            config_file = os.path.join(MAIN_DIRECTORY, "config.yaml")
-            last_mtime = os.path.getmtime(config_file) if os.path.exists(config_file) else 0
             counter = 0
             while True:
                 # Receive and dispatch window messages
                 win32gui.PumpWaitingMessages()
-                
+
                 # Memory optimization: empty garbage collector periodically (every ~10s)
                 counter += 1
                 if counter % 20 == 0:
                     gc.collect()
-                    
-                    # Auto-Reload on config change
-                    current_mtime = os.path.getmtime(config_file) if os.path.exists(config_file) else 0
-                    if current_mtime > last_mtime:
-                        logger.info("Config changed! Restarting application dynamically...")
-                        os.execl(sys.executable, sys.executable, *sys.argv)
-                
+
                 time.sleep(0.5)
 
         except Exception as e:
