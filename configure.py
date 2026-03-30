@@ -354,6 +354,10 @@ class TuringConfigWindow:
         self.app_lang_cb.place(x=10, y=545, width=100)
         self.app_lang_cb.bind('<<ComboboxSelected>>', self.on_app_lang_change)
 
+        self.widget_config_btn = ttk.Button(self.window, text=T("Desktop Widget"),
+                                           command=lambda: self.on_widget_config_click())
+        self.widget_config_btn.place(x=150, y=530, height=40, width=150)
+
         self.weather_ping_btn = ttk.Button(self.window, text=T("Weather & ping"),
                                            command=lambda: self.on_weatherping_click())
         self.weather_ping_btn.place(x=80, y=580, height=40, width=130)
@@ -372,6 +376,10 @@ class TuringConfigWindow:
         self.save_run_btn.place(x=640, y=580, height=40, width=150)
 
         self.config = None
+        
+        # Subwindow for Widget Config
+        self.widget_config_window = WidgetConfigWindow(self)
+        
         self.load_config_values()
         self.check_core_temp_suggestion()
 
@@ -666,6 +674,8 @@ class TuringConfigWindow:
         self.show_date_time_checkbox.config(text=T("Show Time & Date everywhere"))
         self.show_weather_checkbox.config(text=T("Show Weather everywhere"))
         self.show_arc_hud_checkbox.config(text=T("Show VIP HUD (Flag/Hostname/IP)"))
+        self.widget_config_btn.config(text=T("Desktop Widget"))
+        self.widget_config_window.update_texts()
         self.weather_ping_btn.config(text=T("Weather & ping"))
         self.open_theme_folder_btn.config(text=T("Open themes\nfolder"))
         self.edit_theme_btn.config(text=T("Edit theme"))
@@ -694,6 +704,10 @@ class TuringConfigWindow:
 
     def on_theme_change(self, e=None):
         self.load_theme_preview()
+
+    def on_widget_config_click(self):
+        self.widget_config_window.load_config(self.config)
+        self.widget_config_window.show()
 
     def on_weatherping_click(self):
         self.more_config_window.show()
@@ -790,6 +804,106 @@ class TuringConfigWindow:
         if prev_value != -1:
             self.cpu_fan_cb.current(prev_value)  # Force select same index to refresh displayed value
         self.window.after(500, self.on_fan_speed_update)
+
+
+class WidgetConfigWindow:
+    def __init__(self, main_window):
+        self.window = Toplevel()
+        self.window.withdraw()
+        self.window.title(T('Desktop Widget settings'))
+        self.window.geometry("450x360")
+        self.main_window = main_window
+
+        self.enable_var = BooleanVar()
+        self.enable_cb = ttk.Checkbutton(self.window, text=T("Enable Desktop Widget"), variable=self.enable_var)
+        self.enable_cb.place(x=20, y=10)
+
+        self.on_top_var = BooleanVar()
+        self.on_top_cb = ttk.Checkbutton(self.window, text=T("Always on top"), variable=self.on_top_var)
+        self.on_top_cb.place(x=20, y=40)
+
+        self.locked_var = BooleanVar()
+        self.locked_cb = ttk.Checkbutton(self.window, text=T("Lock position (prevent dragging)"), variable=self.locked_var)
+        self.locked_cb.place(x=20, y=70)
+
+        self.transparent_bg_var = BooleanVar()
+        self.transparent_bg_cb = ttk.Checkbutton(self.window, text=T("Hide black background (Floating HUD mode)"), variable=self.transparent_bg_var)
+        self.transparent_bg_cb.place(x=20, y=100)
+
+        ttk.Label(self.window, text=T("Scale / Size:")).place(x=20, y=140)
+        self.scale_cb = ttk.Combobox(self.window, values=["25%", "50%", "75%", "100%", "125%", "150%"], state='readonly')
+        self.scale_cb.place(x=230, y=135)
+
+        ttk.Label(self.window, text=T("Opacity (entire window):")).place(x=20, y=170)
+        self.alpha_cb = ttk.Combobox(self.window, values=["10%", "30%", "50%", "75%", "90%", "100%"], state='readonly')
+        self.alpha_cb.place(x=230, y=165)
+
+        ttk.Label(self.window, text=T("Rounded Corners Radius:")).place(x=20, y=200)
+        self.radius_cb = ttk.Combobox(self.window, values=["0", "10", "15", "25", "35", "50"], state='readonly')
+        self.radius_cb.place(x=230, y=195)
+
+        self.save_btn = ttk.Button(self.window, text=T("Save & Apply (Needs Restart)"), command=self.save)
+        self.save_btn.place(x=120, y=280, width=200, height=40)
+
+        self.window.protocol("WM_DELETE_WINDOW", self.hide)
+        
+    def load_config(self, cfg):
+        self.enable_var.set(cfg['config'].get('ENABLE_DESKTOP_WIDGET', False))
+        self.on_top_var.set(cfg['config'].get('DESKTOP_WIDGET_ON_TOP', True))
+        self.locked_var.set(cfg['config'].get('DESKTOP_WIDGET_LOCKED', False))
+        self.transparent_bg_var.set(cfg['config'].get('DESKTOP_WIDGET_TRANSPARENT_BG', cfg['config'].get('DESKTOP_WIDGET_NO_BG', False)))
+        
+        scale_val = cfg['config'].get("DESKTOP_WIDGET_SCALE", 100)
+        try:
+           self.scale_cb.set(f"{scale_val}%")
+        except:
+           self.scale_cb.set("100%")
+           
+        alpha_val = cfg['config'].get("DESKTOP_WIDGET_ALPHA", 100)
+        try:
+           self.alpha_cb.set(f"{alpha_val}%")
+        except:
+           self.alpha_cb.set("100%")
+
+        radius_val = cfg['config'].get("DESKTOP_WIDGET_RADIUS", 0)
+        try:
+           self.radius_cb.set(str(radius_val))
+        except:
+           self.radius_cb.set("0")
+
+    def show(self):
+        self.window.deiconify()
+        self.window.grab_set()
+
+    def hide(self):
+        self.window.grab_release()
+        self.window.withdraw()
+
+    def update_texts(self):
+        self.window.title(T('Desktop Widget settings'))
+        self.enable_cb.config(text=T("Enable Desktop Widget"))
+        self.on_top_cb.config(text=T("Always on top"))
+        self.locked_cb.config(text=T("Lock position (prevent dragging)"))
+        self.transparent_bg_cb.config(text=T("Hide black background (Floating HUD mode)"))
+        self.save_btn.config(text=T("Save & Apply (Needs Restart)"))
+
+    def save(self):
+        cfg = self.main_window.config
+        cfg['config']['ENABLE_DESKTOP_WIDGET'] = self.enable_var.get()
+        cfg['config']['DESKTOP_WIDGET_ON_TOP'] = self.on_top_var.get()
+        cfg['config']['DESKTOP_WIDGET_LOCKED'] = self.locked_var.get()
+        cfg['config']['DESKTOP_WIDGET_TRANSPARENT_BG'] = self.transparent_bg_var.get()
+        if 'DESKTOP_WIDGET_NO_BG' in cfg['config']:
+            del cfg['config']['DESKTOP_WIDGET_NO_BG']
+        cfg['config']['DESKTOP_WIDGET_SCALE'] = int(self.scale_cb.get().replace("%", ""))
+        cfg['config']['DESKTOP_WIDGET_ALPHA'] = int(self.alpha_cb.get().replace("%", ""))
+        cfg['config']['DESKTOP_WIDGET_RADIUS'] = int(self.radius_cb.get())
+        
+        import ruamel.yaml
+        with open(MAIN_DIRECTORY + "config.yaml", "w", encoding='utf-8') as file:
+            ruamel.yaml.YAML().dump(cfg, file)
+        
+        self.hide()
 
 
 class MoreConfigWindow:

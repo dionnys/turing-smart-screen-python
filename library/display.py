@@ -102,6 +102,51 @@ class Display:
         else:
             logger.error("Unknown display revision '", config.CONFIG_DATA["display"]["REVISION"], "'")
 
+        self.widget_enabled = config.CONFIG_DATA["config"].get("ENABLE_DESKTOP_WIDGET", False)
+        self.screen_image = None
+        if self.widget_enabled and self.lcd is not None:
+            self._setup_desktop_widget()
+
+    def _setup_desktop_widget(self):
+        from PIL import Image
+        from library.desktop_widget import DesktopWidget
+
+        self.original_display_pil_image = self.lcd.DisplayPILImage
+        
+        def intercept_display_image(image, x=0, y=0, image_width=0, image_height=0):
+            if self.screen_image is None:
+                self.screen_image = Image.new("RGB", (self.lcd.get_width(), self.lcd.get_height()), "black")
+            
+            _img_w = image_width or image.size[0]
+            _img_h = image_height or image.size[1]
+            if _img_w != image.size[0] or _img_h != image.size[1]:
+                _cropped = image.crop((0, 0, _img_w, _img_h))
+            else:
+                _cropped = image
+                
+            with self.lcd.update_queue_mutex:
+                self.screen_image.paste(_cropped, (x, y))
+                
+            self.original_display_pil_image(image, x, y, image_width, image_height)
+            
+        self.lcd.DisplayPILImage = intercept_display_image
+        
+        self.original_clear = self.lcd.Clear
+        def intercept_clear():
+            if self.screen_image is not None:
+                self.screen_image = Image.new("RGB", (self.lcd.get_width(), self.lcd.get_height()), "black")
+            self.original_clear()
+        self.lcd.Clear = intercept_clear
+        
+        self.original_set_orientation = self.lcd.SetOrientation
+        def intercept_set_orientation(*args, **kwargs):
+            self.original_set_orientation(*args, **kwargs)
+            if self.screen_image is not None:
+                self.screen_image = Image.new("RGB", (self.lcd.get_width(), self.lcd.get_height()), "black")
+        self.lcd.SetOrientation = intercept_set_orientation
+        
+        self.desktop_widget = DesktopWidget(self)
+
     def initialize_display(self):
         # Reset screen in case it was in an unstable state (screen is also cleared)
         # Can be disabled by config. option. Assume true if key not present in config.yaml
