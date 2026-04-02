@@ -327,47 +327,63 @@ if __name__ == "__main__":
         # For macOS: display the tray icon now with blocking function
         tray_icon.run()
 
-    elif platform.system() == "Windows":  # Windows-specific
-        # Create a hidden window just to be able to receive window message events (for shutdown/logoff clean stop)
-        hinst = win32api.GetModuleHandle(None)
-        wndclass = win32gui.WNDCLASS()
-        wndclass.hInstance = hinst
-        wndclass.lpszClassName = "turingEventWndClass"
-        messageMap = {win32con.WM_QUERYENDSESSION: on_win32_wm_event,
-                      win32con.WM_ENDSESSION: on_win32_wm_event,
-                      win32con.WM_QUIT: on_win32_wm_event,
-                      win32con.WM_DESTROY: on_win32_wm_event,
-                      win32con.WM_CLOSE: on_win32_wm_event,
-                      win32con.WM_POWERBROADCAST: on_win32_wm_event}
+    def fallback_main_loop():
+        """Bucle principal de respaldo (sin widget) para mantener el proceso vivo y procesar eventos de Windows."""
+        if platform.system() == "Windows":
+            # Crear una ventana oculta solo para recibir eventos (apagado, suspensión, etc.)
+            hinst = win32api.GetModuleHandle(None)
+            wndclass = win32gui.WNDCLASS()
+            wndclass.hInstance = hinst
+            wndclass.lpszClassName = "turingEventWndClass"
+            messageMap = {
+                win32con.WM_QUERYENDSESSION: on_win32_wm_event,
+                win32con.WM_ENDSESSION: on_win32_wm_event,
+                win32con.WM_QUIT: on_win32_wm_event,
+                win32con.WM_DESTROY: on_win32_wm_event,
+                win32con.WM_CLOSE: on_win32_wm_event,
+                win32con.WM_POWERBROADCAST: on_win32_wm_event
+            }
+            wndclass.lpfnWndProc = messageMap
 
-        wndclass.lpfnWndProc = messageMap
+            try:
+                myWindowClass = win32gui.RegisterClass(wndclass)
+                hwnd = win32gui.CreateWindowEx(
+                    win32con.WS_EX_LEFT,
+                    myWindowClass,
+                    "turingEventWnd",
+                    0, 0, 0, 0,
+                    win32con.CW_USEDEFAULT,
+                    win32con.CW_USEDEFAULT,
+                    0, 0, hinst, None
+                )
+            except Exception as e:
+                logger.error("Exception while creating event window: %s" % str(e))
 
-        try:
-            myWindowClass = win32gui.RegisterClass(wndclass)
-            hwnd = win32gui.CreateWindowEx(win32con.WS_EX_LEFT,
-                                           myWindowClass,
-                                           "turingEventWnd",
-                                           0,
-                                           0,
-                                           0,
-                                           win32con.CW_USEDEFAULT,
-                                           win32con.CW_USEDEFAULT,
-                                           0,
-                                           0,
-                                           hinst,
-                                           None)
-            import gc
-            counter = 0
-            while True:
-                # Receive and dispatch window messages
+        import gc
+        counter = 0
+        while not scheduler.STOPPING:
+            if platform.system() == "Windows":
                 win32gui.PumpWaitingMessages()
+            
+            # Optimización de memoria
+            counter += 1
+            if counter % 20 == 0:
+                gc.collect()
+            
+            time.sleep(0.5)
 
-                # Memory optimization: empty garbage collector periodically (every ~10s)
-                counter += 1
-                if counter % 20 == 0:
-                    gc.collect()
-
-                time.sleep(0.5)
-
-        except Exception as e:
-            logger.error("Exception while creating event window: %s" % str(e))
+    # Lógica de Inicio de Bucle Principal (Main Thread)
+    # ── IMPORTANTE: Las GUIs (PyQt6/Tkinter) DEBEN correr en el hilo principal ──
+    if getattr(display, "desktop_widget", None):
+        # Si el widget está activo, él toma el control del hilo principal.
+        # Pero antes, lanzamos el listener de eventos de Windows en un hilo separado
+        # para no perder la detección de Sleep/Resume.
+        if platform.system() == "Windows":
+            import threading
+            threading.Thread(target=fallback_main_loop, daemon=True, name="WinEventThread").start()
+        
+        # El widget corre aquí (bloquea el hilo principal)
+        display.desktop_widget.run()
+    else:
+        # Si no hay widget, usamos el bucle estándar en el hilo principal.
+        fallback_main_loop()

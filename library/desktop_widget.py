@@ -30,7 +30,6 @@ class DesktopWidget:
         self.radius = int(self.cfg.get("DESKTOP_WIDGET_RADIUS", 0))
         self.transparent_bg = self.cfg.get("DESKTOP_WIDGET_TRANSPARENT_BG", False)
 
-        threading.Thread(target=self._run_widget, daemon=True).start()
 
     # ── Helpers ──────────────────────────────────────────────────────────
 
@@ -118,7 +117,7 @@ class DesktopWidget:
 
     # ── Backend selector ─────────────────────────────────────────────────
 
-    def _run_widget(self):
+    def run(self):
         use_pyqt = False
         try:
             from PyQt6.QtWidgets import QApplication, QLabel, QWidget  # noqa: F401
