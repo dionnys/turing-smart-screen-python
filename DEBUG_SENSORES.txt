@@ -1,0 +1,102 @@
+
+--- ADMIN CHECK ---
+Is Admin: True
+
+--- ADMIN CHECK ---
+Is Admin: True
+
+--- ADMIN CHECK ---
+Is Admin: True
+
+--- ADMIN CHECK ---
+Is Admin: True
+
+--- ADMIN CHECK ---
+Is Admin: True
+
+--- ADMIN CHECK ---
+Is Admin: True
+
+--- ADMIN CHECK ---
+Is Admin: True
+
+--- ADMIN CHECK ---
+Is Admin: True
+
+--- ADMIN CHECK ---
+Is Admin: True
+
+--- ADMIN CHECK ---
+Is Admin: True
+
+--- ADMIN CHECK ---
+Is Admin: True
+
+--- ADMIN CHECK ---
+Is Admin: True
+
+--- ADMIN CHECK ---
+Is Admin: True
+
+--- ADMIN CHECK ---
+Is Admin: True
+
+--- ADMIN CHECK ---
+Is Admin: True
+
+--- ADMIN CHECK ---
+Is Admin: True
+
+--- ADMIN CHECK ---
+Is Admin: True
+
+--- ADMIN CHECK ---
+Is Admin: True
+
+--- ADMIN CHECK ---
+Is Admin: True
+
+--- ADMIN CHECK ---
+Is Admin: True
+
+--- ADMIN CHECK ---
+Is Admin: True
+
+--- ADMIN CHECK ---
+Is Admin: True
+
+--- ADMIN CHECK ---
+Is Admin: True
+
+--- ADMIN CHECK ---
+Is Admin: True
+
+--- ADMIN CHECK ---
+Is Admin: True
+
+--- ADMIN CHECK ---
+Is Admin: True
+
+--- ADMIN CHECK ---
+Is Admin: True
+
+--- ADMIN CHECK ---
+Is Admin: True
+
+--- ADMIN CHECK ---
+Is Admin: True
+
+--- ADMIN CHECK ---
+Is Admin: True
+
+--- ADMIN CHECK ---
+Is Admin: True
+
+--- ADMIN CHECK ---
+Is Admin: True
+
+--- ADMIN CHECK ---
+Is Admin: True
+
+--- ADMIN CHECK ---
+Is Admin: True

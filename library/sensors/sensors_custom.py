@@ -282,5 +282,62 @@ class PublicIP(CustomDataSource):
     def last_values(self) -> List[float]:
         return []
 
+class CPUPower(CustomDataSource):
+    def as_numeric(self) -> float:
+        try:
+            import mmap, ctypes
+            # Core Temp Mapping Object (Memoria Compartida)
+            shm = mmap.mmap(-1, 4096, "CoreTempMappingObject", access=mmap.ACCESS_READ)
+            mem = shm.read()
+            shm.close()
+
+            # Estructura: Load(256*4) + fTemp(256*4) ... etc.
+            # En la versión 1.19.5, la potencia (fPower) está distribuida en slots de 4 bytes.
+            # El offset habitual para el consumo de Package en Ryzen es 2048 o 4000.
+            
+            pwr = ctypes.c_float.from_buffer_copy(mem, 2048).value
+            
+            if pwr <= 0.0 or pwr > 1000.0:
+                # Buscamos en un rango más amplio si el offset estándar no devuelve nada
+                for offset in range(1500, 4000, 4):
+                    try:
+                        val = ctypes.c_float.from_buffer_copy(mem, offset).value
+                        if 10.0 < val < 500.0: # Un rango coherente para el 9800X3D
+                            return val
+                    except: continue
+                
+            return pwr if pwr > 0 else 0.0
+        except Exception:
+            return 0.0
+
+    def as_string(self) -> str:
+        val = self.as_numeric()
+        return f'{val:>5.1f}W'
+
+    def last_values(self) -> List[float]:
+        return []
+
+class GPUPower(CustomDataSource):
+    def as_numeric(self) -> float:
+        try:
+            import library.sensors.sensors_librehardwaremonitor as lhm
+            gpu = lhm.Gpu.get_gpu_to_use()
+            if gpu:
+                from LibreHardwareMonitor import Hardware as hw
+                gpu.Update()
+                for sensor in gpu.Sensors:
+                    if sensor.SensorType == hw.SensorType.Power:
+                        return float(sensor.Value)
+            return 0.0
+        except Exception:
+            return 0.0
+
+    def as_string(self) -> str:
+        val = self.as_numeric()
+        return f'{val:>5.1f}W'
+
+    def last_values(self) -> List[float]:
+        return []
+
 
 
