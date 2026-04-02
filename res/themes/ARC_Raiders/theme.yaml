@@ -361,7 +361,16 @@ STATS:
         BACKGROUND_IMAGE: background.png
     MEMORY_USED:
       TEXT:
-        SHOW: false
+        SHOW: true
+        X: 1695
+        Y: 167
+        WIDTH: 80
+        HEIGHT: 37
+        ANCHOR: lm
+        FONT_SIZE: 18
+        FONT_COLOR: 180, 230, 255
+        FONT: roboto-mono/RobotoMono-Bold.ttf
+        BACKGROUND_IMAGE: background.png
     MEMORY_PERCENT:
       GRAPH:
         SHOW: true
@@ -392,9 +401,9 @@ STATS:
       TEXT:
         SHOW: true
         SHOW_UNIT: true
-        X: 1740
+        X: 1780
         Y: 164
-        WIDTH: 140
+        WIDTH: 100
         HEIGHT: 37
         ANCHOR: mm
         FONT_SIZE: 34
@@ -430,12 +439,23 @@ STATS:
         FONT_COLOR: 255, 255, 255
         FONT: roboto-mono/RobotoMono-Bold.ttf
         BACKGROUND_IMAGE: background.png
+      USED_GB:
+        SHOW: true
+        X: 1695
+        Y: 125
+        WIDTH: 80
+        HEIGHT: 37
+        ANCHOR: lm
+        FONT_SIZE: 18
+        FONT_COLOR: 180, 230, 255
+        FONT: roboto-mono/RobotoMono-Bold.ttf
+        BACKGROUND_IMAGE: background.png
       TOTAL_GB:
         SHOW: true
         SHOW_UNIT: true
-        X: 1740
+        X: 1780
         Y: 122
-        WIDTH: 140
+        WIDTH: 100
         HEIGHT: 37
         ANCHOR: mm
         FONT_SIZE: 34
