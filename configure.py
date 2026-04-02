@@ -233,7 +233,7 @@ class TuringConfigWindow:
     def __init__(self):
         self.window = Tk()
         self.window.title(T('Turing Smart Screen configuration'))
-        self.window.geometry("820x680")
+        self.window.geometry("840x820")
         self.window.iconphoto(True, PhotoImage(file=MAIN_DIRECTORY + "res/icons/monitor-icon-17865/64.png"))
         # When window gets focus again, reload theme preview in case it has been updated by theme editor
         self.window.bind("<FocusIn>", self.on_theme_change)
@@ -334,64 +334,74 @@ class TuringConfigWindow:
 
         self.autostart_var = BooleanVar()
         self.autostart_checkbox = ttk.Checkbutton(self.window, text=T("Run monitor at Windows startup"), variable=self.autostart_var)
-        if sys.platform == "win32":
-            self.autostart_checkbox.place(x=370, y=460)
 
         self.tray_hidden_var = BooleanVar()
         self.tray_hidden_checkbox = ttk.Checkbutton(self.window, text=T("Hide system tray icon"), variable=self.tray_hidden_var)
-        self.tray_hidden_checkbox.place(x=370, y=490)
 
         self.show_date_time_var = BooleanVar()
         self.show_date_time_checkbox = ttk.Checkbutton(self.window, text=T("Show Time & Date everywhere"), variable=self.show_date_time_var)
-        self.show_date_time_checkbox.place(x=570, y=460)
 
         self.show_weather_var = BooleanVar()
         self.show_weather_checkbox = ttk.Checkbutton(self.window, text=T("Show Weather everywhere"), variable=self.show_weather_var)
-        self.show_weather_checkbox.place(x=570, y=490)
 
         self.show_arc_hud_var = BooleanVar()
         self.show_arc_hud_checkbox = ttk.Checkbutton(self.window, text=T("Show VIP HUD (Flag/Hostname/IP)"), variable=self.show_arc_hud_var)
-        self.show_arc_hud_checkbox.place(x=570, y=520)
 
-        # ARC HUD Flag Selector
-        self.arc_hud_flag_label = ttk.Label(self.window, text=T("Flag (ISO):"))
-        self.arc_hud_flag_label.place(x=370, y=555)
-        self.arc_hud_flag_entry = ttk.Entry(self.window)
-        self.arc_hud_flag_entry.place(x=460, y=550, width=95)
+        # HUD Text Type and Flag Selector (REORGANIZED)
+        # Column 1: App Settings & HUD (Stacked Vertically)
+        if sys.platform == "win32":
+            self.autostart_checkbox.place(x=370, y=485)
+            self.tray_hidden_checkbox.place(x=370, y=515)
+            self.show_date_time_checkbox.place(x=370, y=545)
+            self.show_weather_checkbox.place(x=370, y=575)
+            self.show_arc_hud_checkbox.place(x=370, y=605)
+        else:
+            self.tray_hidden_checkbox.place(x=370, y=485)
+            self.show_date_time_checkbox.place(x=370, y=515)
+            self.show_weather_checkbox.place(x=370, y=545)
+            self.show_arc_hud_checkbox.place(x=370, y=575)
 
-        # ARC HUD Text Type Selector
+        # HUD Inputs (Shifted right slightly but still in the same vertical block)
         self.arc_hud_type_label = ttk.Label(self.window, text=T("HUD Text:"))
-        self.arc_hud_type_label.place(x=570, y=555)
+        self.arc_hud_type_label.place(x=370, y=650)
         self.arc_hud_type_cb = ttk.Combobox(self.window, values=["HOSTNAME", "IP"], state='readonly')
-        self.arc_hud_type_cb.place(x=660, y=550, width=130)
+        self.arc_hud_type_cb.place(x=500, y=645, width=100)
+
+        self.arc_hud_flag_label = ttk.Label(self.window, text=T("Flag (ISO):"))
+        self.arc_hud_flag_label.place(x=370, y=685)
+        self.arc_hud_flag_entry = ttk.Entry(self.window)
+        self.arc_hud_flag_entry.place(x=500, y=680, width=100)
+
+        # Selector de Interfaz de App Language (Movido a la zona roja)
+        self.widget_config_btn = ttk.Button(self.window, text=T("Widget"),
+                                           command=lambda: self.on_widget_config_click())
+        self.widget_config_btn.place(x=650, y=485, height=45, width=150)
 
         # Selector de Interfaz de App Language
         self.app_lang_label = ttk.Label(self.window, text="Interface / Idioma:")
-        self.app_lang_label.place(x=10, y=525)
+        self.app_lang_label.place(x=650, y=550)
         self.app_lang_cb = ttk.Combobox(self.window, values=["English", "Español"], state='readonly')
-        self.app_lang_cb.place(x=10, y=545, width=100)
+        self.app_lang_cb.place(x=650, y=580, width=150)
         self.app_lang_cb.bind('<<ComboboxSelected>>', self.on_app_lang_change)
 
-        self.widget_config_btn = ttk.Button(self.window, text=T("Desktop Widget"),
-                                           command=lambda: self.on_widget_config_click())
-        self.widget_config_btn.place(x=150, y=530, height=40, width=150)
+        self.lhm_admin_warning = ttk.Label(self.window, text="❌ " + T("Run as Administrator to enable this sensor"), foreground="red")
+        self.lhm_admin_warning.place(x=370, y=725)
+        
+        # Botonera inferior (Centered for 840px width)
+        self.weather_ping_btn = ttk.Button(self.window, text=T("Weather & ping"), command=lambda: self.on_weatherping_click())
+        self.weather_ping_btn.place(x=20, y=760, width=155)
 
-        self.weather_ping_btn = ttk.Button(self.window, text=T("Weather & ping"),
-                                           command=lambda: self.on_weatherping_click())
-        self.weather_ping_btn.place(x=80, y=620, height=40, width=130)
+        self.open_theme_folder_btn = ttk.Button(self.window, text=T("Browse themes"), command=lambda: self.on_open_theme_folder_click())
+        self.open_theme_folder_btn.place(x=185, y=760, width=155)
 
-        self.open_theme_folder_btn = ttk.Button(self.window, text=T("Open themes\nfolder"),
-                                         command=lambda: self.on_open_theme_folder_click())
-        self.open_theme_folder_btn.place(x=220, y=620, height=40, width=130)
-
-        self.edit_theme_btn = ttk.Button(self.window, text=T("Edit theme"), command=lambda: self.on_theme_editor_click())
-        self.edit_theme_btn.place(x=360, y=620, height=40, width=130)
+        self.edit_theme_btn = ttk.Button(self.window, text=T("Editor"), command=lambda: self.on_theme_editor_click())
+        self.edit_theme_btn.place(x=350, y=760, width=155)
 
         self.save_btn = ttk.Button(self.window, text=T("Save settings"), command=lambda: self.on_save_click())
-        self.save_btn.place(x=490, y=620, height=40, width=140)
+        self.save_btn.place(x=515, y=760, width=155)
 
-        self.save_run_btn = ttk.Button(self.window, text=T("Save and run"), command=lambda: self.on_saverun_click())
-        self.save_run_btn.place(x=640, y=620, height=40, width=150)
+        self.save_run_btn = ttk.Button(self.window, text=T("Save and launch"), command=lambda: self.on_saverun_click())
+        self.save_run_btn.place(x=680, y=760, width=155)
 
         self.config = None
         
@@ -596,6 +606,12 @@ class TuringConfigWindow:
         except:
             pass
 
+        try:
+            self.show_arc_hud_var.set(self.config.get('config', {}).get('SHOW_ARC_VIP_HUD', self.config.get('config', {}).get('SHOW_ARC_VIP_HUD', self.config.get('config', {}).get('ARC_HUD_VIP', True))))
+    
+        except:
+            pass
+
         # Reload content on screen
         self.on_model_change()
         self.on_size_change()
@@ -644,8 +660,7 @@ class TuringConfigWindow:
         self.config['config']['GLOBAL_SHOW_DATETIME'] = self.show_date_time_var.get()
         self.config['config']['GLOBAL_SHOW_WEATHER'] = self.show_weather_var.get()
         self.config['config']['SHOW_ARC_VIP_HUD'] = self.show_arc_hud_var.get()
-        self.config['config']['ARC_HUD_TEXT_TYPE'] = self.arc_hud_type_cb.get()
-        self.config['config']['ARC_HUD_COUNTRY'] = self.arc_hud_flag_entry.get().lower()[:2]
+
         
         # Guardar lenguaje en YAML
         self.config['config']['APP_LANGUAGE'] = "es" if self.app_lang_cb.get() == "Español" else "en"
@@ -677,6 +692,9 @@ class TuringConfigWindow:
                         # Forzar siempre False para la IP redundante de abajo
                         custom_stats['PublicIP']['TEXT']['SHOW'] = False
                 
+
+
+
                 with open(theme_file, "w", encoding="utf8") as f:
                     yaml = ruamel.yaml.YAML()
                     yaml.indent(mapping=ind, sequence=ind, offset=bsi)
@@ -860,7 +878,7 @@ class TuringConfigWindow:
             import ctypes
             is_admin = ctypes.windll.shell32.IsUserAnAdmin() != 0
             if (hwlib == "LHM" or hwlib == "AUTO") and not is_admin:
-                self.lhm_admin_warning.place(x=370, y=590)
+                self.lhm_admin_warning.place(x=370, y=725)
                 self.save_run_btn.state(["disabled"])
             else:
                 self.lhm_admin_warning.place_forget()

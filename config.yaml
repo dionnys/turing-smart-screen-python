@@ -65,8 +65,9 @@ config:
   DESKTOP_WIDGET_X: -1027
   DESKTOP_WIDGET_Y: -120
   DESKTOP_WIDGET_TRANSPARENT_BG: true
-  ARC_HUD_TEXT_TYPE: IP
+  ARC_HUD_TEXT_TYPE: HOSTNAME
   ARC_HUD_COUNTRY: ve
+  ARC_HUD_VIP: true
 display:
   # Display revision:
   # - A         for Turing 3.5" and UsbPCMonitor 3.5"/5"

@@ -180,7 +180,7 @@ STATS:
     INTERVAL: 1
     TEXT:
       SHOW: true
-      X: 1680
+      X: 1350
       Y: 208
       WIDTH: 200
       HEIGHT: 37
@@ -301,6 +301,7 @@ STATS:
         BAR_SEGMENTS: 20
         BAR_SEGMENT_SEP: 4
         BACKGROUND_IMAGE: background.png
+      X: 1350
     TEMPERATURE:
       INTERVAL: 5
       TEXT:
@@ -344,6 +345,7 @@ STATS:
         FONT_COLOR: 255, 255, 255
         FONT: roboto-mono/RobotoMono-Bold.ttf
         BACKGROUND_IMAGE: background.png
+      X: 1350
     TEMPERATURE:
       TEXT:
         SHOW: true
@@ -580,3 +582,5 @@ STATS:
         FONT_COLOR: 150, 150, 150
         FONT: roboto-mono/RobotoMono-Bold.ttf
         BACKGROUND_IMAGE: background.png
+
+

@@ -272,8 +272,8 @@ class PublicIP(CustomDataSource):
                 import urllib.request
                 req = urllib.request.Request('https://api.ipify.org', headers={'User-Agent': 'Mozilla/5.0'})
                 with urllib.request.urlopen(req, timeout=5) as response:
-                    PublicIP._cached_ip = response.read().decode('utf-8')
-                    PublicIP._last_checked = time.time()
+                    PublicIP._cached_ip = response.read().decode('utf-8').strip()
+                PublicIP._last_checked = time.time()
             except:
                 if PublicIP._cached_ip is None:
                     PublicIP._cached_ip = "IP Unknown"
@@ -281,5 +281,6 @@ class PublicIP(CustomDataSource):
 
     def last_values(self) -> List[float]:
         return []
+
 
 
