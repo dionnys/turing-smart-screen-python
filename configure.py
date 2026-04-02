@@ -233,7 +233,7 @@ class TuringConfigWindow:
     def __init__(self):
         self.window = Tk()
         self.window.title(T('Turing Smart Screen configuration'))
-        self.window.geometry("820x630")
+        self.window.geometry("820x680")
         self.window.iconphoto(True, PhotoImage(file=MAIN_DIRECTORY + "res/icons/monitor-icon-17865/64.png"))
         # When window gets focus again, reload theme preview in case it has been updated by theme editor
         self.window.bind("<FocusIn>", self.on_theme_change)
@@ -335,23 +335,35 @@ class TuringConfigWindow:
         self.autostart_var = BooleanVar()
         self.autostart_checkbox = ttk.Checkbutton(self.window, text=T("Run monitor at Windows startup"), variable=self.autostart_var)
         if sys.platform == "win32":
-            self.autostart_checkbox.place(x=370, y=490)
+            self.autostart_checkbox.place(x=370, y=460)
 
         self.tray_hidden_var = BooleanVar()
         self.tray_hidden_checkbox = ttk.Checkbutton(self.window, text=T("Hide system tray icon"), variable=self.tray_hidden_var)
-        self.tray_hidden_checkbox.place(x=370, y=520)
+        self.tray_hidden_checkbox.place(x=370, y=490)
 
         self.show_date_time_var = BooleanVar()
         self.show_date_time_checkbox = ttk.Checkbutton(self.window, text=T("Show Time & Date everywhere"), variable=self.show_date_time_var)
-        self.show_date_time_checkbox.place(x=570, y=490)
+        self.show_date_time_checkbox.place(x=570, y=460)
 
         self.show_weather_var = BooleanVar()
         self.show_weather_checkbox = ttk.Checkbutton(self.window, text=T("Show Weather everywhere"), variable=self.show_weather_var)
-        self.show_weather_checkbox.place(x=570, y=520)
+        self.show_weather_checkbox.place(x=570, y=490)
 
         self.show_arc_hud_var = BooleanVar()
         self.show_arc_hud_checkbox = ttk.Checkbutton(self.window, text=T("Show VIP HUD (Flag/Hostname/IP)"), variable=self.show_arc_hud_var)
-        self.show_arc_hud_checkbox.place(x=570, y=550)
+        self.show_arc_hud_checkbox.place(x=570, y=520)
+
+        # ARC HUD Flag Selector
+        self.arc_hud_flag_label = ttk.Label(self.window, text=T("Flag (ISO):"))
+        self.arc_hud_flag_label.place(x=370, y=555)
+        self.arc_hud_flag_entry = ttk.Entry(self.window)
+        self.arc_hud_flag_entry.place(x=460, y=550, width=95)
+
+        # ARC HUD Text Type Selector
+        self.arc_hud_type_label = ttk.Label(self.window, text=T("HUD Text:"))
+        self.arc_hud_type_label.place(x=570, y=555)
+        self.arc_hud_type_cb = ttk.Combobox(self.window, values=["HOSTNAME", "IP"], state='readonly')
+        self.arc_hud_type_cb.place(x=660, y=550, width=130)
 
         # Selector de Interfaz de App Language
         self.app_lang_label = ttk.Label(self.window, text="Interface / Idioma:")
@@ -366,20 +378,20 @@ class TuringConfigWindow:
 
         self.weather_ping_btn = ttk.Button(self.window, text=T("Weather & ping"),
                                            command=lambda: self.on_weatherping_click())
-        self.weather_ping_btn.place(x=80, y=580, height=40, width=130)
+        self.weather_ping_btn.place(x=80, y=620, height=40, width=130)
 
         self.open_theme_folder_btn = ttk.Button(self.window, text=T("Open themes\nfolder"),
                                          command=lambda: self.on_open_theme_folder_click())
-        self.open_theme_folder_btn.place(x=220, y=580, height=40, width=130)
+        self.open_theme_folder_btn.place(x=220, y=620, height=40, width=130)
 
         self.edit_theme_btn = ttk.Button(self.window, text=T("Edit theme"), command=lambda: self.on_theme_editor_click())
-        self.edit_theme_btn.place(x=360, y=580, height=40, width=130)
+        self.edit_theme_btn.place(x=360, y=620, height=40, width=130)
 
         self.save_btn = ttk.Button(self.window, text=T("Save settings"), command=lambda: self.on_save_click())
-        self.save_btn.place(x=490, y=580, height=40, width=140)
+        self.save_btn.place(x=490, y=620, height=40, width=140)
 
         self.save_run_btn = ttk.Button(self.window, text=T("Save and run"), command=lambda: self.on_saverun_click())
-        self.save_run_btn.place(x=640, y=580, height=40, width=150)
+        self.save_run_btn.place(x=640, y=620, height=40, width=150)
 
         self.config = None
         
@@ -573,6 +585,17 @@ class TuringConfigWindow:
         except:
             self.show_arc_hud_var.set(True)
 
+        try:
+            self.arc_hud_type_cb.set(self.config['config'].get('ARC_HUD_TEXT_TYPE', 'HOSTNAME'))
+        except:
+            self.arc_hud_type_cb.set("HOSTNAME")
+
+        try:
+            self.arc_hud_flag_entry.delete(0, END)
+            self.arc_hud_flag_entry.insert(0, self.config['config'].get('ARC_HUD_COUNTRY', 've'))
+        except:
+            pass
+
         # Reload content on screen
         self.on_model_change()
         self.on_size_change()
@@ -621,6 +644,8 @@ class TuringConfigWindow:
         self.config['config']['GLOBAL_SHOW_DATETIME'] = self.show_date_time_var.get()
         self.config['config']['GLOBAL_SHOW_WEATHER'] = self.show_weather_var.get()
         self.config['config']['SHOW_ARC_VIP_HUD'] = self.show_arc_hud_var.get()
+        self.config['config']['ARC_HUD_TEXT_TYPE'] = self.arc_hud_type_cb.get()
+        self.config['config']['ARC_HUD_COUNTRY'] = self.arc_hud_flag_entry.get().lower()[:2]
         
         # Guardar lenguaje en YAML
         self.config['config']['APP_LANGUAGE'] = "es" if self.app_lang_cb.get() == "Español" else "en"
@@ -628,21 +653,34 @@ class TuringConfigWindow:
         with open(MAIN_DIRECTORY + "config.yaml", "w", encoding='utf-8') as file:
             ruamel.yaml.YAML().dump(self.config, file)
 
-        # Conectar el Checkbox "VIP HUD" al theme.yaml
+        # Conectar el Checkbox "VIP HUD" al theme.yaml de forma robusta
         try:
             theme_file = MAIN_DIRECTORY + "res/themes/ARC_Raiders/theme.yaml"
             if os.path.exists(theme_file):
                 with open(theme_file, "r", encoding="utf8") as f:
-                    content = f.read()
+                    theme_cfg, ind, bsi = ruamel.yaml.util.load_yaml_guess_indent(f)
                 
-                show_hud = "True" if self.show_arc_hud_var.get() else "False"
-                import re
-                content = re.sub(r"(UserFlag:.*?(?:\n[ \t]+)*IMAGE:(?:\n[ \t]+)*SHOW:) (True|False)", r"\g<1> " + show_hud, content, flags=re.DOTALL)
-                content = re.sub(r"(UserProfile:.*?(?:\n[ \t]+)*TEXT:(?:\n[ \t]+)*SHOW:) (True|False)", r"\g<1> " + show_hud, content, flags=re.DOTALL)
-                content = re.sub(r"(PublicIP:.*?(?:\n[ \t]+)*TEXT:(?:\n[ \t]+)*SHOW:) (True|False)", r"\g<1> " + show_hud, content, flags=re.DOTALL)
+                show_hud = self.show_arc_hud_var.get()
+                custom_stats = theme_cfg.get('STATS', {}).get('CUSTOM', {})
+                
+                if 'UserFlag' in custom_stats:
+                    if 'IMAGE' in custom_stats['UserFlag']:
+                        custom_stats['UserFlag']['IMAGE']['SHOW'] = show_hud
+                    custom_stats['UserFlag']['COUNTRY_CODE'] = self.arc_hud_flag_entry.get().lower()[:2]
+                
+                if 'UserProfile' in custom_stats:
+                    if 'TEXT' in custom_stats['UserProfile']:
+                        custom_stats['UserProfile']['TEXT']['SHOW'] = show_hud
+                
+                if 'PublicIP' in custom_stats:
+                    if 'TEXT' in custom_stats['PublicIP']:
+                        # Forzar siempre False para la IP redundante de abajo
+                        custom_stats['PublicIP']['TEXT']['SHOW'] = False
                 
                 with open(theme_file, "w", encoding="utf8") as f:
-                    f.write(content)
+                    yaml = ruamel.yaml.YAML()
+                    yaml.indent(mapping=ind, sequence=ind, offset=bsi)
+                    yaml.dump(theme_cfg, f)
         except Exception:
             pass
 
@@ -717,6 +755,8 @@ class TuringConfigWindow:
         self.show_date_time_checkbox.config(text=T("Show Time & Date everywhere"))
         self.show_weather_checkbox.config(text=T("Show Weather everywhere"))
         self.show_arc_hud_checkbox.config(text=T("Show VIP HUD (Flag/Hostname/IP)"))
+        self.arc_hud_type_label.config(text=T("HUD Text:"))
+        self.arc_hud_flag_label.config(text=T("Flag (ISO):"))
         self.widget_config_btn.config(text=T("Desktop Widget"))
         self.widget_config_window.update_texts()
         self.weather_ping_btn.config(text=T("Weather & ping"))
@@ -820,7 +860,7 @@ class TuringConfigWindow:
             import ctypes
             is_admin = ctypes.windll.shell32.IsUserAnAdmin() != 0
             if (hwlib == "LHM" or hwlib == "AUTO") and not is_admin:
-                self.lhm_admin_warning.place(x=370, y=460)
+                self.lhm_admin_warning.place(x=370, y=590)
                 self.save_run_btn.state(["disabled"])
             else:
                 self.lhm_admin_warning.place_forget()

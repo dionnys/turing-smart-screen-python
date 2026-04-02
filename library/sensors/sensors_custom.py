@@ -198,6 +198,18 @@ class UserProfile(CustomDataSource):
 
     def as_string(self) -> str:
         import socket
+        import library.config as config
+        
+        hud_type = config.CONFIG_DATA.get('config', {}).get('ARC_HUD_TEXT_TYPE', 'HOSTNAME')
+        
+        if hud_type == "IP":
+            # If IP is requested, we try to use the cached IP from PublicIP sensor if available
+            try:
+                from library.sensors.sensors_custom import PublicIP
+                return PublicIP().as_string().replace("IP: ", "")
+            except:
+                return "IP Unknown"
+        
         try:
             return socket.gethostname().upper()
         except:
@@ -265,7 +277,7 @@ class PublicIP(CustomDataSource):
             except:
                 if PublicIP._cached_ip is None:
                     PublicIP._cached_ip = "IP Unknown"
-        return f"IP: {PublicIP._cached_ip}"
+        return f"{PublicIP._cached_ip}"
 
     def last_values(self) -> List[float]:
         return []
