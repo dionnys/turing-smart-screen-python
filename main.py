@@ -27,6 +27,7 @@
 # This file is the system monitor main program to display HW sensors on your screen using themes (see README)
 
 from library.pythoncheck import check_python_version
+print(">>> Iniciando main.py...")
 check_python_version()
 
 import glob
@@ -351,10 +352,12 @@ if __name__ == "__main__":
                     win32con.WS_EX_LEFT,
                     myWindowClass,
                     "turingEventWnd",
+                    0, 
                     0, 0, 0, 0,
-                    win32con.CW_USEDEFAULT,
-                    win32con.CW_USEDEFAULT,
-                    0, 0, hinst, None
+                    0,
+                    0,
+                    hinst,
+                    None
                 )
             except Exception as e:
                 logger.error("Exception while creating event window: %s" % str(e))
