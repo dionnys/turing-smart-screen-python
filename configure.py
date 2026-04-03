@@ -599,11 +599,13 @@ class TuringConfigWindow:
         # Cargar estado de inicio en Windows (si la tarea existe)
         if sys.platform == "win32":
             try:
-                import winreg
-                key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\\Microsoft\\Windows\\CurrentVersion\\Run", 0, winreg.KEY_READ)
-                winreg.QueryValueEx(key, "TuringSmartScreen")
-                self.autostart_var.set(True)
-                winreg.CloseKey(key)
+                import subprocess
+                check_cmd = ['schtasks', '/Query', '/TN', 'TURZX_Monitor_Autostart']
+                result = subprocess.run(check_cmd, capture_output=True, text=True, creationflags=subprocess.CREATE_NO_WINDOW)
+                if result.returncode == 0:
+                    self.autostart_var.set(True)
+                else:
+                    self.autostart_var.set(False)
             except:
                 self.autostart_var.set(False)
 
@@ -678,26 +680,43 @@ class TuringConfigWindow:
 
         # Guardar cambio de auto-inicio en Windows
         if sys.platform == "win32":
+            # Limpiar clave de registro antigua para evitar conflictos si existe
             try:
                 import winreg
                 key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Run", 0, winreg.KEY_SET_VALUE)
-                if self.autostart_var.get():
+                winreg.DeleteValue(key, "TuringSmartScreen")
+                winreg.CloseKey(key)
+            except Exception:
+                pass
+                
+            try:
+                import ctypes
+                import subprocess
+                import sys, os
+                
+                check_cmd = ['schtasks', '/Query', '/TN', 'TURZX_Monitor_Autostart']
+                result = subprocess.run(check_cmd, capture_output=True, text=True, creationflags=subprocess.CREATE_NO_WINDOW)
+                task_exists = (result.returncode == 0)
+                
+                if self.autostart_var.get() and not task_exists:
                     if getattr(sys, 'frozen', False):
-                        # PyInstaller creates executable in the parent dir of _internal, or directly depending on version
                         main_exe_dir = os.path.dirname(sys.executable)
                         exe_path = os.path.join(main_exe_dir, "main.exe")
                     else:
                         exe_path = os.path.join(MAIN_DIRECTORY, "main.exe")
                         
                     if os.path.exists(exe_path):
-                        target = f'"{exe_path}"'
+                        target = f'\\"{exe_path}\\"'
                     else:
                         py_path = os.path.join(MAIN_DIRECTORY, "main.py")
-                        target = f'"{sys.executable}" "{py_path}"'
-                    winreg.SetValueEx(key, "TuringSmartScreen", 0, winreg.REG_SZ, target)
-                else:
-                    winreg.DeleteValue(key, "TuringSmartScreen")
-                winreg.CloseKey(key)
+                        target = f'\\"{sys.executable}\\" \\"{py_path}\\"'
+                        
+                    params = f'/Create /F /TN "TURZX_Monitor_Autostart" /TR "{target}" /SC ONLOGON /RL HIGHEST'
+                    ctypes.windll.shell32.ShellExecuteW(None, "runas", "schtasks.exe", params, None, 0)
+                    
+                elif not self.autostart_var.get() and task_exists:
+                    params = f'/Delete /TN "TURZX_Monitor_Autostart" /F'
+                    ctypes.windll.shell32.ShellExecuteW(None, "runas", "schtasks.exe", params, None, 0)
             except Exception as e:
                 pass
 
