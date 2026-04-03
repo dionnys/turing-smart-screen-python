@@ -1103,30 +1103,104 @@ class Weather:
                         logger.error(f"Error drawing weather icon: {e}")
 
 
+def get_ping_color(ms):
+    """Retorna color RGB según la latencia: verde <50ms, amarillo <120ms, rojo >=120ms."""
+    if ms < 50:
+        return "0, 255, 0"
+    elif ms < 120:
+        return "255, 255, 0"
+    else:
+        return "255, 80, 80"
+
+
 class Ping:
+    """
+    Clase Ping con medición en hilo de fondo.
+    El hilo mide la latencia cada PING_INTERVAL segundos (default: 3s).
+    El método stats() sólo lee el caché — nunca bloquea el loop principal.
+    """
     last_values_ping = []
+    _ping_failed_warned = False
+
+    # --- Estado compartido del worker ---
+    _cached_delay_ms: float = math.nan   # último valor medido (nan = sin dato)
+    _worker_started: bool = False
+    _ping_interval: int = int(config.CONFIG_DATA["config"].get("PING_INTERVAL", 3))
+
+    @classmethod
+    def _ping_worker(cls):
+        """Hilo de fondo: mide la latencia y actualiza el caché."""
+        import time
+        while True:
+            try:
+                result = ping(dest_addr=PING_DEST, unit="ms", timeout=2)
+            except Exception as e:
+                logger.warning(f"Ping error to {PING_DEST}: {e}")
+                result = None
+
+            if result is None or result is False:
+                cls._cached_delay_ms = math.nan
+                if not cls._ping_failed_warned:
+                    logger.warning(f"Ping to '{PING_DEST}' timed out or failed. Check PING= in config.yaml")
+                    cls._ping_failed_warned = True
+            else:
+                cls._cached_delay_ms = float(result)
+                cls._ping_failed_warned = False
+
+            time.sleep(max(1, cls._ping_interval))
+
+    @classmethod
+    def _ensure_worker(cls):
+        """Lanza el hilo de fondo una sola vez."""
+        if not cls._worker_started:
+            import threading
+            t = threading.Thread(target=cls._ping_worker, daemon=True, name="PingWorker")
+            t.start()
+            cls._worker_started = True
 
     @classmethod
     def stats(cls):
+        cls._ensure_worker()
+
         theme_data = config.THEME_DATA['STATS']['PING']
+        ping_text_data = theme_data['TEXT']
+        ping_radial_data = theme_data['RADIAL']
+        ping_graph_data = theme_data['GRAPH']
+        ping_line_graph_data = theme_data['LINE_GRAPH']
 
-        delay = ping(dest_addr=PING_DEST, unit="ms")
+        delay = cls._cached_delay_ms
 
-        save_last_value(delay, cls.last_values_ping,
-                        theme_data['LINE_GRAPH'].get("HISTORY_SIZE", DEFAULT_HISTORY_SIZE))
-        # logger.debug(f"Ping delay: {delay}ms")
+        save_last_value(
+            0.0 if math.isnan(delay) else delay,
+            cls.last_values_ping,
+            ping_line_graph_data.get("HISTORY_SIZE", DEFAULT_HISTORY_SIZE)
+        )
 
-        display_themed_progress_bar(theme_data['GRAPH'], delay)
+        if math.isnan(delay):
+            display_themed_value(
+                theme_data=ping_text_data,
+                value="---",
+                unit="",
+                min_size=6
+            )
+            display_themed_line_graph(ping_line_graph_data, cls.last_values_ping)
+            return
+
+        delay_ms = int(delay)
+        ping_color = get_ping_color(delay_ms)
+        ping_text_data['FONT_COLOR'] = ping_color
+
+        display_themed_progress_bar(ping_graph_data, delay_ms)
         display_themed_radial_bar(
-            theme_data=theme_data['RADIAL'],
-            value=int(delay),
+            theme_data=ping_radial_data,
+            value=delay_ms,
             unit="ms",
             min_size=6
         )
         display_themed_value(
-            theme_data=theme_data['TEXT'],
-            value=int(delay),
+            theme_data=ping_text_data,
+            value=delay_ms,
             unit="ms",
             min_size=6
         )
-        display_themed_line_graph(theme_data['LINE_GRAPH'], cls.last_values_ping)
+        display_themed_line_graph(ping_line_graph_data, cls.last_values_ping)

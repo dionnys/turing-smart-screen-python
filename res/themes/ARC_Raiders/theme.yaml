@@ -133,7 +133,7 @@ STATS:
     CITY:
       TEXT:
         SHOW: true
-        X: 40
+        X: 30
         Y: 420
         WIDTH: 300
         HEIGHT: 37
@@ -158,7 +158,7 @@ STATS:
     WEATHER_DESCRIPTION:
       TEXT:
         SHOW: false
-        X: 520
+        X: 500
         Y: 420
         WIDTH: 300
         HEIGHT: 37
@@ -170,14 +170,14 @@ STATS:
     ICON:
       IMAGE:
         SHOW: true
-        X: 510
+        X: 490
         Y: 400
         WIDTH: 80
         HEIGHT: 80
         BACKGROUND_IMAGE: background.png
 
   PING:
-    INTERVAL: 1
+    INTERVAL: 3
     TEXT:
       SHOW: true
       X: 1680

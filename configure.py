@@ -427,35 +427,9 @@ class TuringConfigWindow:
                     "¡Una vez instalado, el monitor Turing se conectará a él automáticamente y lo lanzará de fondo!")
 
     def on_close(self):
-        """Diálogo de salida con explicación."""
-        import tkinter.messagebox as messagebox
-
-        if USE_ES:
-            title = "¿Guardar antes de salir?"
-            msg = (
-                "Los cambios se aplican automáticamente al widget.\n"
-                "Para cambios de hardware o tema necesitarás reiniciar el monitor.\n\n"
-                "  ✔ Sí       →  Guardar configuración y cerrar\n"
-                "  ✘ No      →  Cerrar sin guardar\n"
-                "  ✖ Cancelar →  Volver sin cerrar"
-            )
-        else:
-            title = "Save before exit?"
-            msg = (
-                "Widget changes apply live automatically.\n"
-                "Hardware or theme changes require restarting the monitor.\n\n"
-                "  ✔ Yes    →  Save and close\n"
-                "  ✘ No     →  Close without saving\n"
-                "  ✖ Cancel →  Go back"
-            )
-
-        result = messagebox.askyesnocancel(title, msg)
-        if result is True:
-            self.save_config_values()
-            self.window.destroy()
-        elif result is False:
-            self.window.destroy()
-        # result is None → cancelar, no hacer nada
+        """Guarda y cierra directamente sin pedir confirmación."""
+        self.save_config_values()
+        self.window.destroy()
 
     def run(self):
         self.window.mainloop()
