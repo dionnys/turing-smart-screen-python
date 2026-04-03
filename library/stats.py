@@ -564,29 +564,29 @@ class Gpu:
         gpu_fps_line_graph_data = theme_gpu_data['FPS']['LINE_GRAPH']
 
         if fps < 0:
-            fps = 0
-            if gpu_fps_text_data['SHOW'] or gpu_fps_radial_data['SHOW'] or gpu_fps_graph_data[
-                'SHOW'] or gpu_fps_line_graph_data['SHOW']:
-                logger.warning("Your GPU FPS is not supported yet")
-                gpu_fps_text_data['SHOW'] = False
-                gpu_fps_radial_data['SHOW'] = False
-                gpu_fps_graph_data['SHOW'] = False
-                gpu_fps_line_graph_data['SHOW'] = False
-
-        display_themed_progress_bar(gpu_fps_graph_data, fps)
-        display_themed_value(
-            theme_data=gpu_fps_text_data,
-            value=int(fps),
-            min_size=4,
-            unit=" FPS"
-        )
-        display_themed_radial_bar(
-            theme_data=gpu_fps_radial_data,
-            value=int(fps),
-            min_size=4,
-            unit=" FPS"
-        )
-        display_themed_line_graph(gpu_fps_line_graph_data, cls.last_values_gpu_fps)
+            # No game running or sensor unsupported — show placeholder, do NOT disable permanently
+            display_themed_value(
+                theme_data=gpu_fps_text_data,
+                value="---",
+                unit=" FPS",
+                min_size=4
+            )
+            display_themed_line_graph(gpu_fps_line_graph_data, cls.last_values_gpu_fps)
+        else:
+            display_themed_progress_bar(gpu_fps_graph_data, fps)
+            display_themed_value(
+                theme_data=gpu_fps_text_data,
+                value=int(fps),
+                min_size=4,
+                unit=" FPS"
+            )
+            display_themed_radial_bar(
+                theme_data=gpu_fps_radial_data,
+                value=int(fps),
+                min_size=4,
+                unit=" FPS"
+            )
+            display_themed_line_graph(gpu_fps_line_graph_data, cls.last_values_gpu_fps)
 
         # GPU Fan Speed (%)
         gpu_fan_text_data = theme_gpu_data['FAN_SPEED']['TEXT']

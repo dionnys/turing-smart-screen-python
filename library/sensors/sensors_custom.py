@@ -340,4 +340,47 @@ class GPUPower(CustomDataSource):
         return []
 
 
+class SystemVolume(CustomDataSource):
+    """Lee el volumen maestro del sistema Windows via pycaw / Core Audio API."""
 
+    def as_numeric(self) -> float:
+        try:
+            import comtypes
+            comtypes.CoInitialize()
+            from pycaw.pycaw import AudioUtilities
+            
+            devices = AudioUtilities.GetSpeakers()
+            if not devices or not hasattr(devices, 'EndpointVolume'):
+                return 0.0
+                
+            volume = devices.EndpointVolume
+            if volume.GetMute():
+                return 0.0
+            return round(volume.GetMasterVolumeLevelScalar() * 100, 1)
+        except Exception as e:
+            from library.log import logger
+            logger.debug(f"Volume numeric error: {e}")
+            return 0.0
+
+    def as_string(self) -> str:
+        try:
+            import comtypes
+            comtypes.CoInitialize()
+            from pycaw.pycaw import AudioUtilities
+            
+            devices = AudioUtilities.GetSpeakers()
+            if not devices or not hasattr(devices, 'EndpointVolume'):
+                return " N/A"
+                
+            volume = devices.EndpointVolume
+            if volume.GetMute():
+                return " MUTE"
+            level = int(volume.GetMasterVolumeLevelScalar() * 100)
+            return f"{level:>3}%VOL"
+        except Exception as e:
+            from library.log import logger
+            logger.debug(f"Volume string error: {e}")
+            return " N/A"
+
+    def last_values(self) -> List[float]:
+        return []

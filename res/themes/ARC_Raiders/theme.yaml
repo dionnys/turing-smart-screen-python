@@ -1,4 +1,4 @@
-author: '@dionnys'
+author: "@dionnys"
 
 display:
   DISPLAY_SIZE: 9.2"
@@ -65,7 +65,7 @@ static_text:
     FONT: roboto-mono/RobotoMono-Bold.ttf
     BACKGROUND_IMAGE: background.png
   FAN_MIN:
-    TEXT: '0'
+    TEXT: "0"
     X: 1320
     Y: 405
     FONT_SIZE: 14
@@ -85,7 +85,7 @@ static_text:
     FONT: roboto-mono/RobotoMono-Bold.ttf
     BACKGROUND_IMAGE: background.png
   PUMP_MIN:
-    TEXT: '0'
+    TEXT: "0"
     X: 1620
     Y: 405
     FONT_SIZE: 14
@@ -180,9 +180,9 @@ STATS:
     INTERVAL: 3
     TEXT:
       SHOW: true
-      X: 1680
+      X: 1580
       Y: 208
-      WIDTH: 200
+      WIDTH: 90
       HEIGHT: 37
       ANCHOR: rm
       FONT_SIZE: 34
@@ -201,7 +201,7 @@ STATS:
     WLO:
       UPLOAD:
         TEXT:
-          PREFIX: '^ '
+          PREFIX: "^ "
           SHOW: true
           X: 1580
           Y: 249
@@ -216,7 +216,7 @@ STATS:
           SHOW: false
       DOWNLOAD:
         TEXT:
-          PREFIX: 'v '
+          PREFIX: "v "
           SHOW: true
           X: 1220
           Y: 249
@@ -238,7 +238,7 @@ STATS:
     ETH:
       UPLOAD:
         TEXT:
-          PREFIX: '^ '
+          PREFIX: "^ "
           SHOW: true
           X: 1580
           Y: 249
@@ -253,7 +253,7 @@ STATS:
           SHOW: false
       DOWNLOAD:
         TEXT:
-          PREFIX: 'v '
+          PREFIX: "v "
           SHOW: true
           X: 1220
           Y: 249
@@ -414,6 +414,8 @@ STATS:
   MEMORY:
     INTERVAL: 1
     VIRTUAL:
+      LINE_GRAPH:
+        SHOW: false
       GRAPH:
         SHOW: true
         X: 1306
@@ -497,7 +499,7 @@ STATS:
     FORMATTED:
       TEXT:
         SHOW: true
-        PREFIX: 'UPTIME: '
+        PREFIX: "UPTIME: "
         X: 40
         Y: 40
         WIDTH: 400
@@ -626,5 +628,18 @@ STATS:
         ANCHOR: lm
         FONT_SIZE: 18
         FONT_COLOR: 180, 230, 255
+        FONT: roboto-mono/RobotoMono-Bold.ttf
+        BACKGROUND_IMAGE: background.png
+    SystemVolume:
+      INTERVAL: 1
+      TEXT:
+        SHOW: true
+        X: 1680
+        Y: 208
+        WIDTH: 200
+        HEIGHT: 37
+        ANCHOR: rm
+        FONT_SIZE: 28
+        FONT_COLOR: 80, 200, 255
         FONT: roboto-mono/RobotoMono-Bold.ttf
         BACKGROUND_IMAGE: background.png
