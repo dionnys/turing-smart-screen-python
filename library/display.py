@@ -242,54 +242,73 @@ class Display:
         # ── Modo LCD físico / simulado (comportamiento original) ───────────
         self.original_display_pil_image = self.lcd.DisplayPILImage
         
-        # We replace the intercept_display_image technique with a complete isolated double-render!
+        # We replace the double-render with an optimized SINGLE-RENDER version!
         def _execute_shadow_draw(method_name, *args, **kwargs):
-            # Ejecutar el método original en la LCD física
-            original_method = getattr(self.lcd.__class__, method_name)
-            original_method(self.lcd, *args, **kwargs)
-            
-            # Ejecutar el método a la sombra en el canal de Widget
             import PIL.Image
             orig_open = self.lcd.open_image
             orig_display = self.lcd.DisplayPILImage
             orig_new = PIL.Image.new
             
+            ctx = {"bg_mode": "color", "bg_color": (0, 0, 0), "bg_image": None}
+            
             def mock_open(filepath):
                 orig = orig_open(filepath)
                 _transp = config.CONFIG_DATA.get("config", {}).get("DESKTOP_WIDGET_TRANSPARENT_BG", False)
-                if not _transp:
-                    return orig
-                if getattr(config, 'THEME_DATA', {}):
-                    bg_name = config.THEME_DATA.get('display', {}).get('background', 'background.png')
-                    if filepath.endswith(bg_name):
-                        # Usar background_transparent.png si existe en la carpeta del tema
-                        import os
-                        transp_path = filepath.replace(bg_name, "background_transparent.png")
-                        if os.path.exists(transp_path):
-                            return orig_open(transp_path).convert("RGBA")
-                        # Fallback: imagen transparente en memoria
-                        return PIL.Image.new("RGBA", orig.size, (0, 0, 0, 0))
-                return orig.convert("RGBA")
+                # Solo interceptamos si el widget transparente está activo
+                if not _transp: return orig
+                
+                # Guardamos el fondo original opaco en el contexto
+                ctx["bg_mode"] = "image"
+                ctx["bg_image"] = orig.copy()
+                
+                # Devolvemos un lienzo completamente transparente para que lcd_comm dibuje el texto/barra ahí
+                return PIL.Image.new("RGBA", orig.size, (0, 0, 0, 0))
                 
             def mock_new(mode, size, color=0):
-                if mode == 'RGB':
-                    mode = 'RGBA'
-                    color = (0, 0, 0, 0)
+                _transp = config.CONFIG_DATA.get("config", {}).get("DESKTOP_WIDGET_TRANSPARENT_BG", False)
+                if mode == 'RGB' and _transp:
+                    ctx["bg_mode"] = "color"
+                    ctx["bg_color"] = color
+                    return orig_new('RGBA', size, (0, 0, 0, 0))
                 return orig_new(mode, size, color)
                 
             def mock_display(image, x=0, y=0, image_width=0, image_height=0):
+                _transp = config.CONFIG_DATA.get("config", {}).get("DESKTOP_WIDGET_TRANSPARENT_BG", False)
+                if not _transp:
+                    return intercept_display_image(image, x, y, image_width, image_height)
+                
                 if self.widget_canvas is None:
                     self.widget_canvas = PIL.Image.new("RGBA", (self.lcd.get_width(), self.lcd.get_height()), (0, 0, 0, 0))
-                # Modo reemplazo sin mask: borra texto anterior antes de dibujar el nuevo
-                image = image.convert("RGBA")
-                self.widget_canvas.paste(image, (x, y))
+                    
+                # 1. Enviar el parche semitransparente al Desktop Widget (se pega en el canvas en memoria)
+                image_rgba = image.convert("RGBA")
+                self.widget_canvas.paste(image_rgba, (x, y))
                 
-            # Parcheamos silenciosamente
+                # 2. Reconstruir el parche opaco para la pantalla física (LCD hardware)
+                _w = image_width or image_rgba.width
+                _h = image_height or image_rgba.height
+                
+                if ctx["bg_mode"] == "image" and ctx["bg_image"] is not None:
+                    # Traemos el pedazo original del fondo de pantalla
+                    hardware_patch = ctx["bg_image"].crop((x, y, x + _w, y + _h)).convert("RGB")
+                else:
+                    # Fondo de color sólido
+                    hardware_patch = PIL.Image.new("RGB", (_w, _h), ctx["bg_color"])
+                
+                # Pegar el elemento gráfico sobre el fondo opaco restaurado
+                hardware_patch.paste(image_rgba, (0, 0), mask=image_rgba)
+                
+                # 3. Enviar a la LCD física
+                intercept_display_image(hardware_patch, x, y, image_width, image_height)
+
+            # Parcheamos silenciosamente los módulos de creación
             self.lcd.open_image = mock_open
             self.lcd.DisplayPILImage = mock_display
             PIL.Image.new = mock_new
             
             try:
+                # Ejecutamos el método ORIGINAL. Pil resolverá toda la matemática, fuentes y pixeles... UNA SOLA VEZ.
+                original_method = getattr(self.lcd.__class__, method_name)
                 original_method(self.lcd, *args, **kwargs)
             except Exception:
                 pass

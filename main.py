@@ -373,9 +373,9 @@ if __name__ == "__main__":
             if platform.system() == "Windows":
                 win32gui.PumpWaitingMessages()
             
-            # Optimización de memoria
+            # Optimización de memoria: ejecutar GC cada 60 segundos
             counter += 1
-            if counter % 20 == 0:
+            if counter % 120 == 0:
                 gc.collect()
             
             time.sleep(0.5)

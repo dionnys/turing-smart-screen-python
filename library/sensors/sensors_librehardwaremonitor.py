@@ -148,11 +148,24 @@ for hardware in handle.Hardware:
         logger.info("Found Network interface: %s" % hardware.Name)
 
 
+last_update_times = {}
+
 def get_hw_and_update(hwtype: Hardware.HardwareType, name: str = None) -> Hardware.Hardware:
+    global last_update_times
+    import time
     for hardware in handle.Hardware:
         if hardware.HardwareType == hwtype:
             if (name and hardware.Name == name) or name is None:
-                hardware.Update()
+                now = time.time()
+                hw_id = (hwtype, name)
+                # Rate Limiting: Solo llamamos al COM/C# de Update() si pasaron más de 0.5 segundos 
+                # desde la última vez (previene el CPU hog si 10 sensores piden info al mismo tiempo).
+                if now - last_update_times.get(hw_id, 0) > 0.5:
+                    try:
+                        hardware.Update()
+                    except:
+                        pass
+                    last_update_times[hw_id] = now
                 return hardware
     return None
 
