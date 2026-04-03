@@ -45,8 +45,13 @@ if sys.platform == 'win32':
             
     if not is_admin():
         # Relaunch script/exe with admin rights
-        ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
+        ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 0)
         sys.exit(0)
+
+    # Hide the console window to keep it running purely in the background
+    hWnd = ctypes.windll.kernel32.GetConsoleWindow()
+    if hWnd:
+        ctypes.windll.user32.ShowWindow(hWnd, 0)
 
     # Prevent multiple instances
     mutex_name = "turing_smart_screen_python_mutex"

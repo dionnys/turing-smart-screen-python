@@ -201,9 +201,9 @@ class DesktopWidget:
             self.widget = TranslucentWidget()
             self.widget.setWindowTitle("Turing Desktop Widget")
 
-            flags = Qt.WindowType.FramelessWindowHint
+            flags = Qt.WindowType.FramelessWindowHint | Qt.WindowType.Tool
             if self.on_top:
-                flags |= Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.Tool
+                flags |= Qt.WindowType.WindowStaysOnTopHint
 
             self.widget.setWindowFlags(flags)
 
@@ -280,9 +280,9 @@ class DesktopWidget:
                     _current_on_top = config.CONFIG_DATA.get("config", {}).get("DESKTOP_WIDGET_ON_TOP", True)
                     if _current_on_top != parent_self.on_top:
                         parent_self.on_top = _current_on_top
-                        new_flags = Qt.WindowType.FramelessWindowHint
+                        new_flags = Qt.WindowType.FramelessWindowHint | Qt.WindowType.Tool
                         if parent_self.on_top:
-                            new_flags |= Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.Tool
+                            new_flags |= Qt.WindowType.WindowStaysOnTopHint
                         
                         self.widget.setWindowFlags(new_flags)
                         self.widget.show()
