@@ -103,15 +103,35 @@ class DesktopWidget:
             r2, g2, b2 = rgb.split()
             img = Image.merge("RGBA", (r2, g2, b2, a))
 
-        if self.radius > 0:
-            w, h = img.size
-            mask = Image.new("L", img.size, 0)
-            draw = ImageDraw.Draw(mask)
-            draw.rounded_rectangle((0, 0, w, h), radius=self.radius, fill=255)
+        show_border = config.CONFIG_DATA.get("config", {}).get("DESKTOP_WIDGET_SHOW_BORDER", False)
+        border_color = config.CONFIG_DATA.get("config", {}).get("DESKTOP_WIDGET_BORDER_COLOR", "#555555")  # Color por defecto (gris oscuro)
+        border_width = int(config.CONFIG_DATA.get("config", {}).get("DESKTOP_WIDGET_BORDER_WIDTH", 2))
+
+        if self.radius > 0 or show_border:
             img = img.convert("RGBA")
-            r, g, b, a = img.split()
-            a = Image.composite(a, Image.new("L", img.size, 0), mask)
-            img = Image.merge("RGBA", (r, g, b, a))
+            w, h = img.size
+
+            if show_border and border_width > 0:
+                draw = ImageDraw.Draw(img, "RGBA")
+                try:
+                    # Lo dibujamos ANTES de aplicar la máscara de esquinas para que sea 100% interno y no se desborde.
+                    offset = border_width // 2
+                    draw.rounded_rectangle(
+                        (offset, offset, w - 1 - offset, h - 1 - offset),
+                        radius=self.radius,
+                        outline=border_color,
+                        width=border_width
+                    )
+                except Exception:
+                    pass
+
+            if self.radius > 0:
+                mask = Image.new("L", img.size, 0)
+                draw = ImageDraw.Draw(mask)
+                draw.rounded_rectangle((0, 0, w, h), radius=self.radius, fill=255)
+                r, g, b, a = img.split()
+                a = Image.composite(a, Image.new("L", img.size, 0), mask)
+                img = Image.merge("RGBA", (r, g, b, a))
 
         return img
 
@@ -181,11 +201,9 @@ class DesktopWidget:
             self.widget = TranslucentWidget()
             self.widget.setWindowTitle("Turing Desktop Widget")
 
-            flags = Qt.WindowType.FramelessWindowHint | Qt.WindowType.Tool
+            flags = Qt.WindowType.FramelessWindowHint
             if self.on_top:
-                flags |= Qt.WindowType.WindowStaysOnTopHint
-            else:
-                flags |= Qt.WindowType.WindowStaysOnBottomHint
+                flags |= Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.Tool
 
             self.widget.setWindowFlags(flags)
 
@@ -255,8 +273,19 @@ class DesktopWidget:
                     self.label.resize(w, h)
                     self.label.setPixmap(pixmap)
 
-                    if not parent_self.on_top:
-                        self.widget.lower()
+                    # Dynamic update of config
+                    _current_locked = config.CONFIG_DATA.get("config", {}).get("DESKTOP_WIDGET_LOCKED", False)
+                    parent_self.locked = _current_locked
+
+                    _current_on_top = config.CONFIG_DATA.get("config", {}).get("DESKTOP_WIDGET_ON_TOP", True)
+                    if _current_on_top != parent_self.on_top:
+                        parent_self.on_top = _current_on_top
+                        new_flags = Qt.WindowType.FramelessWindowHint
+                        if parent_self.on_top:
+                            new_flags |= Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.Tool
+                        
+                        self.widget.setWindowFlags(new_flags)
+                        self.widget.show()
 
                 except Exception:
                     pass
@@ -278,10 +307,7 @@ class DesktopWidget:
         root.title("Turing Desktop Widget")
         root.overrideredirect(True)
 
-        if self.on_top:
-            root.attributes("-topmost", True)
-        else:
-            root.lower()
+        root.attributes("-topmost", self.on_top)
 
         if self.alpha < 1.0:
             root.attributes("-alpha", self.alpha)
@@ -370,8 +396,14 @@ class DesktopWidget:
                     self.label.config(image=self.tk_image)
                     self.label.image = self.tk_image
 
-                    if not self.on_top:
-                        root.lower()
+                    # Dynamic update of config
+                    _current_locked = config.CONFIG_DATA.get("config", {}).get("DESKTOP_WIDGET_LOCKED", False)
+                    self.locked = _current_locked
+
+                    _current_on_top = config.CONFIG_DATA.get("config", {}).get("DESKTOP_WIDGET_ON_TOP", True)
+                    if _current_on_top != self.on_top:
+                        self.on_top = _current_on_top
+                        root.attributes("-topmost", self.on_top)
 
                 except Exception:
                     pass

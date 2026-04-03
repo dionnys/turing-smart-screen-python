@@ -905,20 +905,24 @@ class WidgetConfigWindow:
         self.transparent_bg_cb = ttk.Checkbutton(self.window, text=T("Hide black background (Floating HUD mode)"), variable=self.transparent_bg_var)
         self.transparent_bg_cb.place(x=20, y=100)
 
-        ttk.Label(self.window, text=T("Scale / Size:")).place(x=20, y=140)
+        self.show_border_var = BooleanVar()
+        self.show_border_cb = ttk.Checkbutton(self.window, text=T("Mostrar marco interior (Border)"), variable=self.show_border_var)
+        self.show_border_cb.place(x=20, y=130)
+
+        ttk.Label(self.window, text=T("Scale / Size:")).place(x=20, y=170)
         self.scale_cb = ttk.Combobox(self.window, values=["25%", "50%", "75%", "100%", "125%", "150%"])
-        self.scale_cb.place(x=230, y=135)
+        self.scale_cb.place(x=230, y=165)
 
-        ttk.Label(self.window, text=T("Opacity (entire window):")).place(x=20, y=170)
+        ttk.Label(self.window, text=T("Opacity (entire window):")).place(x=20, y=200)
         self.alpha_cb = ttk.Combobox(self.window, values=["10%", "30%", "50%", "75%", "90%", "100%"])
-        self.alpha_cb.place(x=230, y=165)
+        self.alpha_cb.place(x=230, y=195)
 
-        ttk.Label(self.window, text=T("Rounded Corners Radius:")).place(x=20, y=200)
+        ttk.Label(self.window, text=T("Rounded Corners Radius:")).place(x=20, y=230)
         self.radius_cb = ttk.Combobox(self.window, values=["0", "10", "15", "25", "35", "50"])
-        self.radius_cb.place(x=230, y=195)
+        self.radius_cb.place(x=230, y=225)
 
         self.save_btn = ttk.Button(self.window, text=T("Save & Apply (Needs Restart)"), command=self.save)
-        self.save_btn.place(x=120, y=280, width=200, height=40)
+        self.save_btn.place(x=120, y=290, width=200, height=40)
 
         self.window.protocol("WM_DELETE_WINDOW", self.hide)
         
@@ -927,6 +931,7 @@ class WidgetConfigWindow:
         self.on_top_var.set(cfg['config'].get('DESKTOP_WIDGET_ON_TOP', True))
         self.locked_var.set(cfg['config'].get('DESKTOP_WIDGET_LOCKED', False))
         self.transparent_bg_var.set(cfg['config'].get('DESKTOP_WIDGET_TRANSPARENT_BG', cfg['config'].get('DESKTOP_WIDGET_NO_BG', False)))
+        self.show_border_var.set(cfg['config'].get('DESKTOP_WIDGET_SHOW_BORDER', False))
         
         scale_val = cfg['config'].get("DESKTOP_WIDGET_SCALE", 100)
         try:
@@ -960,6 +965,7 @@ class WidgetConfigWindow:
         self.on_top_cb.config(text=T("Always on top"))
         self.locked_cb.config(text=T("Lock position (prevent dragging)"))
         self.transparent_bg_cb.config(text=T("Hide black background (Floating HUD mode)"))
+        self.show_border_cb.config(text=T("Mostrar marco interior (Border)") if "es" in lang_code.lower() else "Show inner outline/border")
         self.save_btn.config(text=T("Save & Apply (Needs Restart)"))
 
     def save(self):
@@ -968,6 +974,7 @@ class WidgetConfigWindow:
         cfg['config']['DESKTOP_WIDGET_ON_TOP'] = self.on_top_var.get()
         cfg['config']['DESKTOP_WIDGET_LOCKED'] = self.locked_var.get()
         cfg['config']['DESKTOP_WIDGET_TRANSPARENT_BG'] = self.transparent_bg_var.get()
+        cfg['config']['DESKTOP_WIDGET_SHOW_BORDER'] = self.show_border_var.get()
         if 'DESKTOP_WIDGET_NO_BG' in cfg['config']:
             del cfg['config']['DESKTOP_WIDGET_NO_BG']
         import re
